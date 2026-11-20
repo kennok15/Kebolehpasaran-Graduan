@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard Kebolehpasaran Graduan — Kolej Komuniti Santubong</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+:root{
+  --biru:#003087;--biru-gelap:#001f5b;--biru-muda:#dbeafe;--biru-sederhana:#1a4fa0;
+  --hijau:#006633;--hijau-gelap:#004d26;--hijau-muda:#d1fae5;
+  --emas:#c8a951;--emas-muda:#fef9e7;
+  --putih:#ffffff;--kelabu:#f4f6f9;--kelabu-sempadan:#e2e8f0;--kelabu-teks:#64748b;
+  --teks:#1e293b;--merah:#dc2626;--oren:#ea580c;--ungu:#7c3aed;
+  --shadow:0 2px 10px rgba(0,0,0,0.08);--shadow-md:0 4px 20px rgba(0,0,0,0.12);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:var(--kelabu);color:var(--teks);font-size:14px;line-height:1.6;}
+
+/* ===== HEADER RASMI ===== */
+.header-rasmi{
+  background:linear-gradient(135deg,var(--biru-gelap) 0%,var(--biru) 60%,var(--biru-sederhana) 100%);
+  color:var(--putih);padding:0;position:sticky;top:0;z-index:1000;
+  box-shadow:0 3px 15px rgba(0,0,0,0.3);
+}
+.header-top{
+  display:flex;align-items:center;gap:16px;padding:14px 24px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+.header-logo{
+  width:56px;height:56px;flex-shrink:0;
+  background:var(--putih);border-radius:8px;padding:4px;
+  display:flex;align-items:center;justify-content:center;
+}
+.header-logo img{width:100%;height:100%;object-fit:contain;}
+.header-institusi{flex:1;}
+.header-nama{font-size:18px;font-weight:800;letter-spacing:0.3px;line-height:1.2;}
+.header-subjudul{font-size:12px;opacity:0.85;margin-top:2px;}
+.header-kanan{text-align:right;font-size:12px;opacity:0.9;}
+.header-kanan strong{display:block;font-size:13px;font-weight:700;}
+.header-kanan span{opacity:0.75;font-size:11px;}
+.header-tajuk{
+  background:rgba(0,0,0,0.25);padding:10px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:3px solid var(--emas);
+}
+.header-tajuk-teks{font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.header-tajuk-badge{
+  background:var(--emas);color:var(--biru-gelap);font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:20px;letter-spacing:0.5px;
+}
+
+/* ===== FILTER BAR ===== */
+.filter-bar{
+  background:var(--putih);border-bottom:1px solid var(--kelabu-sempadan);
+  padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.filter-label{font-size:11px;font-weight:700;color:var(--kelabu-teks);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:5px;}
+.filter-select{
+  border:1px solid var(--kelabu-sempadan);border-radius:var(--radius-sm);
+  padding:6px 28px 6px 10px;font-size:12px;background:var(--kelabu);color:var(--teks);
+  cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  transition:border-color .2s;
+}
+.filter-select:focus{outline:none;border-color:var(--biru);}
+.filter-actions{margin-left:auto;display:flex;gap:8px;}
+.btn{padding:7px 14px;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
+.btn:hover{opacity:.85;transform:translateY(-1px);}
+.btn-secondary{background:var(--kelabu-sempadan);color:var(--teks);}
+.btn-primary{background:var(--biru);color:var(--putih);}
+.btn-success{background:var(--hijau);color:var(--putih);}
+.rekod-info{font-size:12px;color:var(--kelabu-teks);display:flex;align-items:center;gap:5px;}
+.rekod-info strong{color:var(--biru);}
+
+/* ===== CONTAINER ===== */
+.container{max-width:1400px;margin:0 auto;padding:20px 24px;}
+
+/* ===== SECTION HEADER ===== */
+.section-header{display:flex;align-items:center;gap:10px;margin:24px 0 14px;}
+.section-header h2{font-size:15px;font-weight:800;color:var(--biru-gelap);display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.section-line{flex:1;height:2px;background:linear-gradient(90deg,var(--biru) 0%,transparent 100%);border-radius:2px;}
+
+/* ===== KPI PERBANDINGAN PANEL ===== */
+.kpi-panel{
+  background:var(--putih);border-radius:var(--radius);box-shadow:var(--shadow-md);
+  overflow:hidden;margin-bottom:20px;border:1px solid var(--kelabu-sempadan);
+}
+.kpi-panel-header{
+  background:linear-gradient(135deg,var(--biru-gelap),var(--biru));
+  color:var(--putih);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.kpi-panel-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.kpi-panel-subtitle{font-size:11px;opacity:.8;margin-top:2px;}
+.kpi-panel-body{padding:20px;}
+.kpi-panel-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.kpi-year-col{border-radius:var(--radius-sm);padding:16px 20px;}
+.kpi-year-col.y2024{background:#eff6ff;border:2px solid #bfdbfe;}
+.kpi-year-col.y2025{background:#f0fdf4;border:2px solid #bbf7d0;}
+.kpi-year-title{font-size:13px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.kpi-year-col.y2024 .kpi-year-title{color:var(--biru);}
+.kpi-year-col.y2025 .kpi-year-title{color:var(--hijau);}
+.kpi-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.05);}
+.kpi-row:last-child{border-bottom:none;}
+.kpi-row-lbl{font-size:12px;color:var(--kelabu-teks);}
+.kpi-row-val{font-weight:800;font-size:15px;}
+.kpi-year-col.y2024 .kpi-row-val{color:var(--biru);}
+.kpi-year-col.y2025 .kpi-row-val{color:var(--hijau);}
+.trend{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+.trend-up{background:#d1fae5;color:#065f46;}
+.trend-down{background:#fee2e2;color:#991b1b;}
+.trend-same{background:#f1f5f9;color:#475569;}
+
+/* ===== KPI CARDS (6 kad besar) ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.kpi-card{
+  background:var(--putih);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:20px;border-top:4px solid transparent;position:relative;overflow:hidden;
+}
+.kpi-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(20px,-20px);opacity:.07;}
+.kpi-card:nth-child(1){border-top-color:var(--hijau);}.kpi-card:nth-child(1)::before{background:var(--hijau);}
+.kpi-card:nth-child(2){border-top-color:var(--biru);}.kpi-card:nth-child(2)::before{background:var(--biru);}
+.kpi-card:nth-child(3){border-top-color:#f59e0b;}.kpi-card:nth-child(3)::before{background:#f59e0b;}
+.kpi-card:nth-child(4){border-top-color:var(--ungu);}.kpi-card:nth-child(4)::before{background:var(--ungu);}
+.kpi-card:nth-child(5){border-top-color:var(--oren);}.kpi-card:nth-child(5)::before{background:var(--oren);}
+.kpi-card:nth-child(6){border-top-color:#06b6d4;}.kpi-card:nth-child(6)::before{background:#06b6d4;}
+.kpi-card-label{font-size:11px;font-weight:700;color:var(--kelabu-teks);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.kpi-card-vals{display:flex;gap:16px;align-items:flex-end;}
+.kpi-val-block{flex:1;}
+.kpi-val-year{font-size:10px;font-weight:700;color:var(--kelabu-teks);margin-bottom:2px;}
+.kpi-val-num{font-size:26px;font-weight:900;line-height:1;}
+.kpi-card:nth-child(1) .kpi-val-num{color:var(--hijau);}
+.kpi-card:nth-child(2) .kpi-val-num{color:var(--biru);}
+.kpi-card:nth-child(3) .kpi-val-num{color:#d97706;}
+.kpi-card:nth-child(4) .kpi-val-num{color:var(--ungu);}
+.kpi-card:nth-child(5) .kpi-val-num{color:var(--oren);}
+.kpi-card:nth-child(6) .kpi-val-num{color:#0891b2;}
+.kpi-val-divider{width:1px;background:var(--kelabu-sempadan);align-self:stretch;}
+.kpi-card-trend{margin-top:10px;font-size:11px;color:var(--kelabu-teks);}
+
+/* ===== CHART GRID ===== */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-card{background:var(--putih);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;border:1px solid var(--kelabu-sempadan);}
+.chart-card.full{grid-column:1/-1;}
+.chart-ttl{font-size:13px;font-weight:800;color:var(--teks);display:flex;align-items:center;gap:7px;margin-bottom:3px;}
+.chart-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.chart-sub{font-size:11px;color:var(--kelabu-teks);margin-bottom:14px;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap.tall{height:300px;}
+
+/* ===== KESEPADANAN PANEL ===== */
+.kesepadanan-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.kesepadanan-card{background:var(--putih);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;border:1px solid var(--kelabu-sempadan);}
+.kesepadanan-ttl{font-size:13px;font-weight:800;color:var(--teks);margin-bottom:4px;}
+.kesepadanan-sub{font-size:11px;color:var(--kelabu-teks);margin-bottom:16px;}
+.bar-kesepadanan{display:flex;flex-direction:column;gap:12px;}
+.bar-row{display:flex;flex-direction:column;gap:4px;}
+.bar-row-label{display:flex;justify-content:space-between;font-size:12px;}
+.bar-row-label span:first-child{font-weight:600;}
+.bar-track{background:var(--kelabu-sempadan);border-radius:20px;height:12px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:20px;transition:width .8s ease;}
+.bar-sepadan{background:linear-gradient(90deg,var(--hijau),#22c55e);}
+.bar-tidak{background:linear-gradient(90deg,var(--merah),#f87171);}
+
+/* ===== MAP ===== */
+#map{height:380px;border-radius:var(--radius-sm);}
+.peta-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;}
+.legend-item{display:flex;align-items:center;gap:5px;}
+.legend-dot{width:12px;height:12px;border-radius:50%;}
+
+/* ===== TABLE ===== */
+.table-section{background:var(--putih);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;border:1px solid var(--kelabu-sempadan);}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.table-toolbar-title{font-size:13px;font-weight:800;color:var(--teks);}
+.search-input{
+  border:1px solid var(--kelabu-sempadan);border-radius:var(--radius-sm);
+  padding:7px 10px 7px 32px;font-size:12px;width:220px;background:var(--kelabu);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2364748b' viewBox='0 0 24 24'%3E%3Cpath d='M21 20l-4.35-4.35A8 8 0 1 0 15.65 15.65L20 20l1 1zM10 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:10px center;
+}
+.search-input:focus{outline:none;border-color:var(--biru);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--kelabu);padding:10px 12px;text-align:left;font-weight:700;font-size:11px;color:var(--kelabu-teks);text-transform:uppercase;border-bottom:2px solid var(--kelabu-sempadan);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--kelabu-sempadan);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tbody tr:hover{background:var(--kelabu);}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-bekerja{background:#d1fae5;color:#065f46;}
+.b-belajar{background:#dbeafe;color:#1e40af;}
+.b-kemahiran{background:#ede9fe;color:#5b21b6;}
+.b-menunggu{background:#ffedd5;color:#9a3412;}
+.b-tidak{background:#fee2e2;color:#991b1b;}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;}
+.pag-info{font-size:11px;color:var(--kelabu-teks);}
+.pag-ctrl{display:flex;gap:3px;}
+.page-btn{border:1px solid var(--kelabu-sempadan);background:var(--putih);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer;}
+.page-btn.active{background:var(--biru);color:var(--putih);border-color:var(--biru);}
+.page-btn:disabled{opacity:.4;cursor:default;}
+
+/* ===== FOOTER ===== */
+footer{
+  background:var(--biru-gelap);color:rgba(255,255,255,.8);
+  text-align:center;padding:20px 24px;font-size:11px;line-height:1.8;
+  border-top:3px solid var(--emas);
+}
+footer strong{color:var(--emas);}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1000px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .chart-grid{grid-template-columns:1fr;}
+  .chart-card.full{grid-column:1;}
+  .kpi-panel-cols{grid-template-columns:1fr;}
+  .kesepadanan-grid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .header-top{padding:10px 14px;gap:10px;}
+  .header-nama{font-size:14px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .container{padding:14px;}
+  .kpi-card-vals{flex-direction:column;gap:8px;}
+  .kpi-val-divider{display:none;}
+}
+
+/* ===== PRINT ===== */
+@media print{
+  .filter-bar,.btn,.pag-ctrl,.search-input,.header-tajuk{display:none!important;}
+  .header-rasmi{position:static;box-shadow:none;}
+  .header-top{padding:10px 16px;}
+  .container{max-width:100%;padding:10px 16px;}
+  body{background:white;}
+  .chart-grid{grid-template-columns:1fr 1fr!important;}
+  .chart-card.full{grid-column:1/-1!important;}
+  .kesepadanan-grid{grid-template-columns:1fr 1fr!important;}
+  .kpi-panel-cols{grid-template-columns:1fr 1fr!important;}
+  .kpi-grid{grid-template-columns:repeat(3,1fr)!important;}
+  .chart-card,.kpi-card,.kpi-panel,.table-section,.kesepadanan-card{
+    box-shadow:none;border:1px solid #ccc;page-break-inside:avoid;
+  }
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  .data-table{font-size:10px;}
+  footer{position:fixed;bottom:0;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER RASMI ===== -->
+<header class="header-rasmi">
+  <div class="header-top">
+    <div class="header-logo">
+      <img id="logo-img" alt="Logo KK Santubong"/>
+    </div>
+    <div class="header-institusi">
+      <div class="header-nama">KOLEJ KOMUNITI SANTUBONG</div>
+      <div class="header-subjudul">Kementerian Pendidikan Tinggi &nbsp;|&nbsp; Santubong, Kuching, Sarawak</div>
+    </div>
+    <div class="header-kanan">
+      <strong><i class="fas fa-chart-bar"></i>&nbsp; Sistem Pemantauan Graduan</strong>
+      <span id="tarikh-hari-ini"></span><br/>
+      <span>Disediakan oleh: <strong style="color:var(--emas)">Ts. Kenny Pragash a/l Kaniasen</strong></span>
+    </div>
+  </div>
+  <div class="header-tajuk">
+    <div class="header-tajuk-teks"><i class="fas fa-graduation-cap"></i>&nbsp; Dashboard Kebolehpasaran Graduan — Sijil Teknologi Elektrik</div>
+    <div class="header-tajuk-badge">KPI 1 SKPG TVET 2024–2025</div>
+  </div>
+</header>
+
+<!-- ===== FILTER BAR ===== -->
+<div class="filter-bar">
+  <div class="filter-label"><i class="fas fa-filter"></i> Penapis:</div>
+  <select class="filter-select" id="f-tahun">
+    <option value="Semua">📅 Semua Tahun</option>
+    <option value="2024">Kohort 2024</option>
+    <option value="2025">Kohort 2025</option>
+  </select>
+  <select class="filter-select" id="f-jantina">
+    <option value="Semua">👤 Semua Jantina</option>
+    <option value="Lelaki">Lelaki</option>
+    <option value="Perempuan">Perempuan</option>
+  </select>
+  <select class="filter-select" id="f-sektor">
+    <option value="Semua">🏢 Semua Sektor</option>
+    <option value="Awam">Awam</option>
+    <option value="Swasta">Swasta</option>
+    <option value="GLC">GLC</option>
+  </select>
+  <div class="rekod-info"><i class="fas fa-users"></i> Memaparkan <strong id="rekod-papar">0</strong> daripada <strong id="rekod-jumlah">0</strong> graduan</div>
+  <div class="filter-actions">
+    <button class="btn btn-secondary" id="btn-reset"><i class="fas fa-undo"></i> Reset</button>
+    <button class="btn btn-success" onclick="window.print()"><i class="fas fa-print"></i> Cetak / PDF</button>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTAINER ===== -->
+<div class="container">
+
+  <!-- SEKSYEN 1: KPI CARDS -->
+  <div class="section-header">
+    <h2><i class="fas fa-tachometer-alt" style="color:var(--biru)"></i> Petunjuk Prestasi Utama (KPI)</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-users"></i> Jumlah Graduan</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num" id="k-graduan-2024">27</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num" id="k-graduan-2025">28</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-up">▲ +1 graduan</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-award"></i> Kadar Kebolehpasaran</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num">96.3%</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num">100%</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-up">▲ +3.7% — Pencapaian Sempurna</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-briefcase"></i> Peratus Bekerja</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num">44.4%</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num">28.6%</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-down">▼ -15.8% (lebih ramai sambung belajar)</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-university"></i> Menyambung Pengajian</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num">48.1%</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num">64.3%</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-up">▲ +16.2% — Minat tinggi ke peringkat lebih tinggi</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-tools"></i> Meningkat Kemahiran</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num">0.0%</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num">7.1%</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-up">▲ +7.1% — Kategori baharu 2025</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-label"><i class="fas fa-check-double"></i> Kesepadanan Pekerjaan</div>
+      <div class="kpi-card-vals">
+        <div class="kpi-val-block"><div class="kpi-val-year">2024</div><div class="kpi-val-num">41.7%</div></div>
+        <div class="kpi-val-divider"></div>
+        <div class="kpi-val-block"><div class="kpi-val-year">2025</div><div class="kpi-val-num">37.5%</div></div>
+      </div>
+      <div class="kpi-card-trend"><span class="trend trend-down">▼ -4.2% (dalam kalangan yang bekerja)</span></div>
+    </div>
+  </div>
+
+  <!-- SEKSYEN 2: CARTA INTERAKTIF -->
+  <div class="section-header">
+    <h2><i class="fas fa-chart-bar" style="color:var(--biru)"></i> Analisis Kebolehpasaran Graduan</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-ttl"><span class="chart-dot" style="background:var(--biru)"></span>Taburan Status Graduan Mengikut Tahun</div>
+      <div class="chart-sub">Bilangan graduan mengikut kategori status untuk kohort 2024 dan 2025</div>
+      <div class="chart-wrap"><canvas id="c-status-tahun"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-ttl"><span class="chart-dot" style="background:var(--hijau)"></span>Taburan Status Keseluruhan</div>
+      <div class="chart-sub">Peratusan setiap kategori status bagi semua graduan yang ditapis</div>
+      <div class="chart-wrap"><canvas id="c-donut-status"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-ttl"><span class="chart-dot" style="background:#f59e0b"></span>Trend KPI Sebenar 2024 vs 2025</div>
+      <div class="chart-sub">Perbandingan peratusan KPI utama antara dua kohort (data rasmi)</div>
+      <div class="chart-wrap"><canvas id="c-trend-kpi"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-ttl"><span class="chart-dot" style="background:var(--ungu)"></span>Taburan Sektor Pekerjaan</div>
+      <div class="chart-sub">Peratusan graduan bekerja mengikut sektor (Awam, Swasta, GLC)</div>
+      <div class="chart-wrap"><canvas id="c-donut-sektor"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <div class="chart-ttl"><span class="chart-dot" style="background:var(--merah)"></span>Top Majikan — Penyerapan Graduan</div>
+      <div class="chart-sub">Organisasi yang paling banyak menyerap graduan Sijil Teknologi Elektrik</div>
+      <div class="chart-wrap tall"><canvas id="c-majikan"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SEKSYEN 3: KESEPADANAN PEKERJAAN -->
+  <div class="section-header">
+    <h2><i class="fas fa-balance-scale" style="color:var(--hijau)"></i> Analisis Kesepadanan Pekerjaan</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="kesepadanan-grid">
+    <div class="kesepadanan-card">
+      <div class="kesepadanan-ttl"><i class="fas fa-check-circle" style="color:var(--hijau)"></i> Kohort 2024 — Kesepadanan Bidang</div>
+      <div class="kesepadanan-sub">Peratus graduan bekerja dalam bidang berkaitan program pengajian (27 graduan, 12 bekerja)</div>
+      <div class="bar-kesepadanan">
+        <div class="bar-row">
+          <div class="bar-row-label"><span>Sepadan dengan bidang</span><span style="color:var(--hijau);font-weight:700">41.7%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-sepadan" style="width:41.7%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-row-label"><span>Tidak sepadan bidang</span><span style="color:var(--merah);font-weight:700">58.3%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-tidak" style="width:58.3%"></div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#f0fdf4;border-radius:var(--radius-sm);font-size:12px;color:var(--hijau-gelap)">
+          <strong>5 daripada 12 graduan bekerja</strong> dalam pekerjaan yang berkaitan dengan Teknologi Elektrik
+        </div>
+      </div>
+    </div>
+    <div class="kesepadanan-card">
+      <div class="kesepadanan-ttl"><i class="fas fa-check-circle" style="color:var(--hijau)"></i> Kohort 2025 — Kesepadanan Bidang</div>
+      <div class="kesepadanan-sub">Peratus graduan bekerja dalam bidang berkaitan program pengajian (28 graduan, 8 bekerja)</div>
+      <div class="bar-kesepadanan">
+        <div class="bar-row">
+          <div class="bar-row-label"><span>Sepadan dengan bidang</span><span style="color:var(--hijau);font-weight:700">37.5%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-sepadan" style="width:37.5%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-row-label"><span>Tidak sepadan bidang</span><span style="color:var(--merah);font-weight:700">62.5%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-tidak" style="width:62.5%"></div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#f0fdf4;border-radius:var(--radius-sm);font-size:12px;color:var(--hijau-gelap)">
+          <strong>3 daripada 8 graduan bekerja</strong> dalam pekerjaan yang berkaitan dengan Teknologi Elektrik
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEKSYEN 4: PETA TABURAN -->
+  <div class="section-header">
+    <h2><i class="fas fa-map-marked-alt" style="color:var(--hijau)"></i> Taburan Geografi Graduan</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="chart-card full" style="margin-bottom:20px">
+    <div class="chart-ttl"><span class="chart-dot" style="background:var(--hijau)"></span>Peta Lokasi Penempatan Kerja & Pengajian Graduan</div>
+    <div class="chart-sub">Lokasi semasa graduan di Sarawak dan luar negeri — klik marker untuk maklumat lanjut</div>
+    <div id="map"></div>
+    <div class="peta-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#006633"></div>Bekerja</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#003087"></div>Belajar Lanjut</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Meningkat Kemahiran</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ea580c"></div>Menunggu Penempatan</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Tidak Bekerja</div>
+    </div>
+  </div>
+
+  <!-- SEKSYEN 5: JADUAL GRADUAN -->
+  <div class="section-header">
+    <h2><i class="fas fa-table" style="color:var(--biru)"></i> Senarai Rekod Graduan</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-toolbar">
+      <div class="table-toolbar-title">Rekod Terperinci Graduan — Sijil Teknologi Elektrik</div>
+      <input class="search-input" id="carian" type="text" placeholder="Cari nama, majikan, negeri..."/>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Nama</th><th>Kohort</th><th>Jantina</th><th>Status</th>
+            <th>Majikan / Institusi</th><th>Jawatan</th><th>Gaji (RM)</th><th>Negeri</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pag-info" id="pag-info"></div>
+      <div class="pag-ctrl" id="pag-ctrl"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <strong>LAPORAN KEBOLEHPASARAN GRADUAN — KOLEJ KOMUNITI SANTUBONG</strong><br/>
+  Sistem Pemantauan Kebolehpasaran Graduan &mdash; KPI 1 SKPG TVET<br/>
+  Disediakan oleh: <strong>Ts. Kenny Pragash a/l Kaniasen</strong> (Pegawai Pengesanan Graduan) &nbsp;|&nbsp;
+  Disemak oleh: <strong>Abdullah Latep bin Hj Mustapha</strong> (Pengarah, Kolej Komuniti Santubong)<br/>
+  <span style="opacity:.6">Data berdasarkan Templat KPI 1 2024 &amp; Templat KPI 1 2026 (SKPG TVET) &mdash; Cut-off: 15 Dis 2024 &amp; 12 Dis 2025</span>
+</footer>
+
+<script>
+// =============================================================
+// LOGO — ditetapkan semasa halaman dimuatkan
+// =============================================================
+const LOGO_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACF8AAANLCAYAAACdIKCgAAAACXBIWXMAAC4jAAAuIwF4pT92AAAgAElEQVR4nOzdTW5c153G4XsDDzJogNkBFaDnVGcDUlZAZgWmpgECMysQvQIzaPTY9ApMryDUBmJp3oDpWc9iAQ308DaucyquqPRB8q2P/6l6HoAIUKVYVbfEqlvn/s454//915MnwzCcDwAAsHt3v/7jD9deBwAAAAAAevLZMAxzfPHSqwYAQAGvhmEQXwAAAAAA0JVfebkAAAAAAAAAAB5PfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAACBOb74NwcQAAAAAAAAAOBx5vji3x07AAAAAAAAAIDHse0IAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABD4bBiG/3YA2YBvhmG4dmABgAf6yQEDAAAAAKA3c3zxv141NuDu13/84daBBQAAAAAAAGDf2XYEAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAh85uCxr05+958XXlzW7H/aDwCwX+7e/O1Pd15TAAAAAOCxxBfss6+8ugAA3MOXwzBcOlAAAAAAwGPZdgQAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAgPgCAAAAAAAAACAgvgAAAAAAAAAACIgvAAAAAAAAAAAC4gsAAAAAAAAAgID4AgAAAAAAAAAgIL4AAAAAAAAAAAiILwAAAAAAAAAAAuILAAAAAAAAAICA+AIAAAAAAAAAICC+AAAAAAAAAAAIiC8AAAAAAAAAAALiCwAAAAAAAACAwGcOHsC9vRqG4dbhAoC94/MdAAAAAIiILwDu7/bN3/506XgBAAAAAAAAy2w7AgAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABMQXAAAAAAAAAAAB8QUAAAAAAAAAQEB8AQAAAAAAAAAQEF8AAAAAAAAAAATEFwAAAAAAAAAAAfEFAAAAAAAAAEBAfAEAAAAAAAAAEBBfAAAAAAAAAAAExBcAAAAAAAAAAAHxBQAAAAAAAABAQHwBAAAAAAAAABAQXwAAAAAAAAAABD5z8AAA1m8cx98Mw/B0GIbF/86etJ+H+GkYhtftz98tfqZpuvOyAQCwKeM4Lp/L/qb9Nc8f8dctzmGHdl778/ntNE0/rfxJAACAjokvAABC4zg+b4PST1tc8WzNx/T03RvGcZz/500byH69+BFlAADwEOM4Plk6l33ezmeP13gQ33tu3M5nXy2fz07TdLvyBwEAADohvgBgq9pF6m3b61lVbbD0oaspbNreHvO2osXzpZ+TlT+0PSft53Tp8f04DMPt4keM8ThLK5dsm1mgG7Y0i5ft+2mapteHdNx39O/N6kgbtKPPh73/3dnRd4SP2etj3r4/nLXz2adrDi0e6ln7+Xz418B4+XzWudEGFPm9c+67RkXGBkq/fzo3q+FQxwZ39TsqbPy4Lf97LPEeuaPfwUe/FxYd+2ZLkvewXX3eiC8A2La/7uDv/H0buNs77QLAfNJ+VOi5vXnkcsRlLQ1Qn31o5l4hx23wejGAPccYN23g+mafXpcNe+r9am9ddfB7vK9e7dvnwz3s4t/bl8MwXK7cyrrs4vNhr393xnE8H4bh65U7duvF0rZve2Ecx0Vscbbj2OI+FoHxF8M/Hvurdj574wLmerQL0Ls4133XX4ZhuFi5lce62fHkgNmPxS+QOTer4VC/a8/nPC9Xbt2wcRz/PE3T1bb/3o5s899jlfP6XfwOJu+FO/ndoYwxeCA7+bz51cpNAEBPbouFF2/nLxH7MHtpDi7GcbwYx3EeeP9hGIavOr1ge9wGrr8dx/GncRyv22ArAMBOtXOSauHFN9M0Xa/c2qF5plc795vPzb9t54TVw4v3edbOxX+Yz83bObrZj5kqq4CdrdzCo7TfiV2HF0On7zGw7y59bgJsj/gCADo1D6QWGVxZ2IvwYp59OY7j7VJwUekYp47aihjfj+N41waubb8AAGxduwhQbbWn76ZpOl+5tSMtIJ4vsty1mV6fF4u1UydLIcZNW9GDfh0Lw9em6/cuYKOO2qovAGyB+AIAOjRfNF9sK1HIea97Y88BQhuk/qnNvjyELQmO28D1362GAQBsU4s/bwpundftxcvFKhctIH55ILPPT9vqbnftXF5UfH+VjpVoYD0cR+BjTgWLANshvgCAzswDq+2ieSUvpmm66fBYPmmD1H9vg9T7NCvwIRarYdy2f18AAJt0ZQW39WjRxe3SKheH6Lidy4sw7q9SeC0aCLXvcGWCK9sbQFnXPiMBNk98AQAdaYMY1SKH7vbFXooufjjgQer3mVf8+KsIAwDYlIIruHUZXrwTXRzCqm33cSTC6NKR2dixagGL+AJqmj8nL702AJslvgCAThRdnrmrfbEX24uILj5pEWHcmLUEAKxLu8BabQW3i562zhNd3Mu/RBgdPF6GQXyRcfyA+/rCZBuAzRJfAEA/rostz9zVvtjjOM6P9a4NxHI/8z7aP5g5CACkxnF82s5nK/lzLyu4tYj4WnTxID9HGOM43rnQtKJaYC0eeKT2PfdQt88EHufKcQPYHPEFAHSgzdg6LfRIu1meeR7ob7MDvzYo9WhzsPLacsAAwGO0iPO62LnYvHVeFxcf2lYtd1Zue7TjpVXdBMX/UC2+OGoRAQ9X8Tua1ROhthMrQwFsjvgCAIprF7wrrdbQU3gxf5n83uzAtZgHrb81aA0APEK1Fdxe9bB13rz9W4uIvxIRr8Vp24pEUFyT1+WB2veySpM0FsQXUN9L28wCbIb4AgAKK7o883n1fbHbahevbTGyEadtFQxLNwMAnzSO41Wxi4NverjI21a7eC0iXrsjQXFZp16TB7NaCJDoYus1gN6ILwCgqDbwdFNsltu8L/bNyq2FtIHq22KzK/fNYulmy1QCAB/UthH44kP378C8gttZ5RXc5u8AcxhgtYuNWwTFT/f8eX5I1ajH6hcPI74AEs9s+QSwfuILAKjrpl3krqL0vthtoPraQPVWzctU3pqhBgC8q13UrnTuuNg6727lniLaMXtddBuBfTR/1/q+xdvU4CLgPbX3i6oTDmxlAP24MqYDsF7iCwAoqEUElWYjld4Xuw08zatdfL5yJ5v27MBnDQIA72iD+LfFgtiLylvntZmn3xeLrw/FV+37F7s3z8J24f5+KocqXkPox1GxWBage+ILACimDbxWighK74s9juNz24zs3HyRYF4BwzLBAMBQMLz4cpqmshfX24X/r1fuYJs+H8fx9SHM/u0gbvCd4n4cJ2BdPm9jawCsgfgCAAppqwdUGngtvS92C1X+apuREubX4Fv7hQLAYWshQaUodt4673Ll1gLatnk3Vm8r46QFxfs+a7/68/N94hNa9G6VHGCdrm0/ArAe4gsAKGJpeeYqSu+L3S7ymyFYz9cCDAA4TBVXcKu6dd7Suf/pyp3s0okt9XbuxNYjn1R91QuvH/RnDrouvG4AOfEFABRgX+yHsTRzeQIMADgwbbnqSudn89Z5JZfQXjr3t21eTUdtBQwBxu74LvEB7f2j+mo5VuWAPr302QeQE18AQA1XxQZf/1x1X+wWXliauT4BBgAciDZL/abQs51XcDuvuHWe8KIb+xxg9PCcfI/4sOqrXgB9u/L6AWTEFwCwY+M4XhSLCeZ9sUt+2RJedEeAAQB7rsUEN8VWcHtecQU34UV39jXA6GFP/2Ozrz/I9ytgk561cUoAHkl8AQA7NI7jPGvlq0KvQeV9sS+FF10SYADAfrsuFhO8EF6wRnOAcd1eP7bLd4h3tFWGnq3cUVB7rECfLv0OAzye+AIAdqTN5Km0tUflfbHngbeXK3fQi6/bPvAAwB5pcexpoWf0ZcWt84QX3TtpK2DsS4DRy/OwvcaqnoIUF26hX0e2HwF4vM8cOwDYvjZwd11oeebK+2LPg25fr9zRn1ftEd8uPfL5eC9mZj59ZyB0ESt0MbPpHm7mAKPiTFQA4OHaOVqlOHbeOu9y5dYarvYgvHjbzluXz19nd+1neCfkfrL0c7zyX+vPSfv+tg9BQC/becxbj5xN03Szcs/hshoIsC2n3oMBHkd8AQC7UW155qr7YldbHeS+3rTIYv55PU3T3T3+f7crtzRtucenbUD7eaeD90ctwHhaMfIBAO6v6ApuJfcnH8fxqtOt875rkcXifPY+528fO599/s75bJUI/SHmC1FX0zTZC3975tjFhb9f3nf3IWQC+nE1juOtMRyAhxFfAMCWtQHYSsszV94X+6ajgdnv2uO9vWdscW/tv3e3GHhsMcZZm/nUU4hx3J6DLUgAoFMFz9F+bCFxxRXc5nO1L1buqOlte11vNjHLdZqmRZh8NfxyIfm8ndP2dEH5i3YhShCwHbYe+UVv0Y9tR6B/8+fzZYfvPwA7Jb4AgC0qOABbcl/s5qaDgdgf26zP63UHFx/T/q6rNgvhSRu4vugkVHk27w9feFlw2IRXH5sNfEC29j4JbFSlc7Q5GDgrGl487WTrvPkz6mrbMUGLv+fz14u2hc15sUD9Y67bam69fq71su3I7Miy9//UW4givoD9MEeH17aQZcfulrZz7tWutuLr/bh1SXwBAFvSBmCvCh3vsvtit9VBnq3cUcccXVxWCFfaoO9lO2ZnbVZC9WjlZZsx6GI0h+JWcATsg4LnaGfFV3Cr7Jt2PrvzgKBdWL9pUfFlB9u0HLXXt6eIYVlvW76cH/rWI20SR49b9QD74brjzzz2QBt/7XFb6n+aJ6LN46Erd2zYNE1WH96BXx3cMwaAHSi4PPObaZrOV24toM18q7o889u2TcuTaiuGzDM+22OavxB/2R5rZdft9wIA6EDBFdxeFA45rwvHsPPst9/O3wWqrdwwP572HeW3HczSO2kxEpt36nuD7VeAnTppF44BuAfxBQBsx22hAdif98VeubWANqhWtWT+y7xEXOFtWn7WIozLFmF8t/IH6jjuvVoHgENRcAuNv1Q9JxvH8aLo9hnzd4A/zLPfqm+X0SKM+fvK79vjrmpeit1swu042PigfUfuZUueZbYdgf1y0VaoAuATxBcAsGHz3ohzJV7kOJfdF7u5Lric6jzg+x/TNF0UPm4r2qD1PEj5h8KrYJy2lU4AgKLahb9KK0zMW+ddrNxawNK2GdXMW4w8bdt7dKOtbPK0Pf6qulrNreNY5JC/M5RcsfIeXKSF/XJkAg3A/YgvAGCD2vLMlfYsLrkv9lB3luBioLrkMbuPNsg+D1q/KfoQbT8CAEUthRdlts6bZ16u3FpHtZD4bVvt4ryniHhZW9XtvHBQfFw0uNk3pwc847rX+ALYP89MoAH4NPEFAGxIm1VUaXnmsvtit4H9aoOWL3oeqF7WVsGoOmvwyIA1AJR1VWgFt5+3zqt6btZC4mcrd+zOm3a8ulrt4kPa83heNCj+om3Nw2Yd3AW/9u+qynswwGACDcCniS8AYAParJxKA51l98VuKs0SnGfU/b748XqUNmvwRcGHZsAaAIppMUGVFdxKb51XcLuRRXjR7ept79OeT9UA42rllpp6Xj3iEFeA6Pk523YE9tNRR595ADshvgCANWsF+E2hmKDsvtjDLyuEVNlu5G0bqC65Qsg6tKikYoDhyzsAFNHOz74q9HqcFw8Jroqd+z/dh9Xb3qc9r/nf53fvuXuXnrUtJ6vr+YL4yQFuPdLzah/HK7cA++Lzdq4IwHuILwBg/Sotz1x9X+yhrXpRwdt9nCH4PkUDjF4GrAFgr7XVqCqt4Pai8tYZxULib9pKZ3ttDjCmaToruKXepaXYN+5gvi+M43gmYAAK27vVYgHWRXwBAGs0juNloeWZS++LPfxyvCoMKB1MeLFQNMCotFw3ABycduG40nZw33SwFVyVx3cQ4VEV6fQAACAASURBVMWy9nxfrdyxO8cdhO+9O6R/4z2vegHsv+M2pgfAO8QXALAmbWbKyyLHs/S+2MMvg/tVBicPKrxYKBhgHFv9AgB26rrQCm7fVY8J2nlLhZC4h9XuNuWsPf8qLoqvfvH/7P3BcRxJ1jboZvzWi9mhfgnATwKwRwGgJSBbAoLbMRsjSgKCEhTKrt11gRI0KUGDCkwTEjQhwS2s7jLGgnWyKokEQSAz3P1ExPOYwbo7gSYyA5GR4e6vnzP1MvGHUZ1n1uIcyrKpY2cLbBMDS/PW+xxgm/AFAIwgJoAy7crL3hd7FRPEGXZVvl5i8GItAhiZSjbbOQEADXRdd5GofcZ19h3usTh6sfWN+tJXuyspXvdJhM8zOFD9orglhLXnUvXCoizMn/YjAHcIXwDAnmLi9UOi8syp+2Kv/toBk6FKyK8TKGVdXLKSzapfAEBl8dn7Jslxv51ImCBDkDh9tbsaEgYwsle/mLoltOMwHgKm4rjrOqFDgA3CFwCwvw9Jyg2vJtIXe5WkusGnvu8NEP/yMtGEteoXAFBJVHDLUMFhNZXgRaL2eWdLruC2KY5Dlnv7zNUv5hAKOYyWn7MUGxWO5/r6gFk6FzoE+IvwBQDsIcozZ5kYSd8Xe5Wnf+3tQnZMPVoscmQ5JqpfAEAFCSu4TaF13ipJ1YuphK6riePxMcnTyRq+ONp6ZJrmPJab0zhI2xFYhgPtRwD+InwBADtKVp45fV/sDRkmIk+XXp75Pn3fX61Wq3f3fKsFVUkAoLyrRBXcfs7eOm9D6/uUG/dK33Uax6e1A2HiooQvpkH4ApbjRdd1J/7eAMIXALCTKM/8W5KjN5W+2FlKNH+c0MR+dX3fnyeZsD4ycAeAcrquu0y0C36o4pCl9cmDYkG9ddULQeLviOOSZfFaK71yDubYeiTmGbIE4gCe6lL7EQDhCwB4shhIXCU5cpMJXoTWk9W3M9tJVEqWY+RvBQAFRICgdRu4tU9TaJ23ofWC+q9RrYzviOPz/v7vVnWYKUwcC/tzMsexgoo2wJQdCh4CCF8AwC6u9MXeWevJpDO7BH8s0YT1K7smAGBcySq4XU+pfUAspLfclX5rUePRzuJ4tZYpIDC3++oXMxwrzK2ah7YjsDxvZhj2A3gS4QsAeIJk5ZlfT6l9RoLJ6uu+7y+3HuV7TFgDwMx0XfcsWQW3lxMLxrYOEp8LEj9OHKcMrWyEicuaTVghSUujsQlfwDKZewMWTfgCAB6p67qzROWZ308wSNC86sXWI3xXoglr4QsAGEEsAH9Isri3bp33Zes7SUVw5UXDZ3fT932Ge7PJ6Pt+qBJyk+D5ZgkIzDEEMqdKEXOregEs11HMoQIskvAFADxCVG34Jcmxmlpf7PVkf8vJ6k96Y+/kIkH1i6NY7AAA9nORqILb2cRa560SLIxqN7KbDMctywLUHMvAv5jDWCHBeBmYn9ZzOefmcoClEr4AgB+IXoVZ2ntMqi/2htZhEZPVO0hU/cKOCQDYQ9d154kquP080VZwLe9HbrTP200ct9bVL4SJy5pDxYi5Vvtz3kM7Q8j1Y8Pff6D9CLBUwhcA8IDYgXKZqDzz1Ppir7WcTFL1Yj8Zql8owQsAO+q6bvgcfZvk+L2fYuuMCGMfbn2jHkHi/WQ4fu5ny5lDcKHma/i09Ug5La+bsHTPE2xkOY77UIBFEb4AgIddJinPPLm+2Guxy6vlMTRZvYck1S8O7RYEgKeL0ECWXYfXU2udt6Hl81b1Yk9Jql9kWHya6/30pCuLxHW61nh52AVvYwIsw0HMIb5v/GovY2MbwGIIXwDAd0R55ix9V6fYF3ut5UTjjaoXo8iwQ9VuCQB4gmQV3IbWeSdbj05Hy/uQyVUKSar1cTxOsPhUM6BQu3LelKtf1HzuWdqpAvW03pB0YFMUsDTCFwBwj67rThOVZ55qX+y1lhNhJqtHENUvWu+WEL4AgKf5kKiC2+lEW+e1bjlyq1/6aDIcxyXdz9Ze5J9y+KLmeVE9fKGCIbQV1S/eNX4ab7qum3IIF+BJhC8A4I6YYM2yaD/JvthrCVqOmKwej92CADARXdcNn9vHSZ7tyYQruK0aL5h/mGpoJZskYeIlLTzVrj54GOP4Sem67mXFcNd1o+uJ8AW0d9GgItFdNkcBiyF8AQAbYnH3Q5LyzJ8m3Bd7reUE43uT1eOJRZPWvbLtlACAH4gKbm8e/qlqXk88eLFqHL4QJB5X6+PZuvJFzUBWi/YWUxw71zwnXE9goWJurHX44SjaOwPMnvAFAHzrqmFZ4U3XMylL23Sn4NYj7Kv1YF34AgAekKyC27uJt85rXcXtpu/72tUDZi2OZ8sw8cEUqzPs4FMs9F1X/r2TGj/Hxo9ZtxwB8uj7/jzBhpq3WhEBSyB8AQCh67pLfbFH12qxfJisNrk0vtbHVPgCAL4jFvKuklRwex+T/FPX8t7DvWwZ7mfrqR2+Oow2HlPxsuL1emg58iX+e+1qRBZaIY8M92aq8ACzJ3wBAH+VZ36V5FhMvS/2V13XnTSc/DdZXUBM2NXewbbpKBaWAIBtWYIX1zNonbfWcqHc4kQZrY9rk3Oq0U7jFpVbphS+qHmd3Dzva2/yEL6AJKIi2afGz+Y45mABZkv4AoDFi9KvvyU5DnPoi73WcrJaieZyFjlhDQCZJargdjOzz+qWVdzmMiZIJY5ry7LrrdqOVF8Ab3SsJxG+iDDM8dY3yrE5AVjLUP3iwsYaYM6ELwBYtJj0yLJQP/m+2He0mqy+1XKkqNbHdgl9sgHg0bquO0tSwW1onfdyJq3z1uOEw61v1OFetqyWx/dwYf3uax/rg4m0Hqn5HDdbjgALEhVpv9H3/TAH+r7xUThQ4QuYM+ELABYrUtYf9MUuptUiuaoXBcXEXcvdgluTBwCwVDGp/kuSl/9yZtUaWt5zCF+UJUxc1mYAq8XYbArl7M+2Himn9QKntiOQz3mEZlt6cV84BGAOhC8AWLKLJOWZ59QX+6to5dIq1GKyuryWx1jlCwD4qzJDlvue17GTck6a3XPM8FimEse35aJTi3Or5u/8M4QVFQlrH+sXmcvZx1i5ZlWd1p8TwheQTGyquUjwrC61HwHmSPgCgEVKVJ75eqY7+VsukJusLq/lMT4wOAdg6ZJVcPt1Zq3z1lrdz37ceoQSWt7Ptji3Wt4/t1j8z9x6pGbVi/tajsypQhGwu4vGVU1XEUSreU0EqEL4AoDFiZ0mGcozDzuATufSF/uOVpPVN/dMLjG+1gEX1S8AWLosFdyG1nlznTQ/3nqkDgujdSwtfNFSi2OdOXxR87ltBeNmOv8APFFcCzK0P34b87QAsyF8AcCixC7BLJUR5tYXe1OrgZOqFxXEIP264VPQFxSAxeq67jRRBbdZBi8aLwK4n62j5TisZsuJtaVVvngRrZlS6bruZeWKRRlaU2k7AklF5bJPCZ5dhhYoAKMRvgBgabKUZ55jX+xNdgrOX8vzV9sRABYpQgEZJqiHMtUnM95B3Sx8MfMxQhqtj3PXdbXDxC3P6d8btdPJWP3idOuRcu5rOdJCi7AR8HgZgrTH0R4aYBaELwBYjK7rzhuGAjbNtS/2V413GAlf1NPyWCtJCcDiRAW3ywRB4tuo4Dbn0vWt7mdbVhZbopa7feccJr5vnNAi7FIz6PBDcQ1/UfFXznbOARhPVOR9n+CQnmesWASwC+ELABYhdha9TfBa59wXe63ZYMlOwarum1StxYAcgCUaKl4cJXjdc26dt9aqxZkgcV3CxGXcF8xq0f7iKNlCXu0wyEPH/HbrEWDJzhJcFw60HwHm4m/+kgAswE9Jdn3Mti/2Ha0mq+0UrGhYdOm6rtWvV7qWqTltUF48hb7vF/m6YWxd1w2Ldq8SHNi5t85ba1WVQPiirpYtGWqfY03DHkP7i67rrhsEyIZr5/nWo23UDF98/EHLkc81q4IOIZgfPB+goaGaWVQL/qXx3+FF13VDyPeh8BhAesIXACxBhvLMc++LvanVZLXJnPpaTKB+ZQKPiTkUGgL28CzJTsD3c26dd0erCiPCF3UtqfJF6/HwKsbltRf2UoQvogJHzetKtoXLZ8brkFvf9xcR9m1dZW14HlcLmT8FZkrbEQCWQF/sulrtqjJZXV/LCTStRwBYisME97PDLuraJfObaNymwP1sXY53XS2q5hx2XZehxUvtCph2jQO7yFCt9zBRxSKAnQhfAEB5S+iLvUmZ5uVwzAFg/q4rl8tvrVn4wi7PuuJ4t+pxX63lQwP3BrRjTHyz9Y3yMly/Xm49Us5H1xJgF9Fa7n2Cg/dmqW07gXkQvgCAsn5dSF/sTa1KFJpgqu/eidVKDMQBoI4lVXBbNQwSf9p6hBpmHyauvYD1g9aALSoy1Aw+bOm67mXl9nMZq16oWgjTcdYwmLgpQ8s9gJ0IXwBAWadd17WawF2UBYZcMnhoYhUAmIcMJahratWiQJC4Dce9rssGv/MwAhCt1P7djwlf1B47C1/ARETgNkPbj6Ou67QfASZJ+AIAyjpoNMHURJJ+utQjfAEA86f0cx3aubXR7Lgv8X3VsPVIk/BFbMSo+bvfazkC7Kvv+4toO9faWdd1wlvA5AhfAEB5L7quW0qf7FZVPjIMChfnByWFSzMAB4B6PiyompswMXOT7b65RcXCVpUvXsaGjFoythwBpilD5bNFbWgD5kP4AgDquJDWLsrunuXxfgKAepY0+d0qZKKFXhtLqDhS8775MVUtWgQEDhq1Hqm5CeO27/us4QtjN5iYaO37PsGzPm7cOgrgyYQvAKCOpUxY2ym4PC3KBgMA9b0w+c0MCXGP64eV8SIgcLv1jfKqVqOMzRfHW98oJ3PVC+ELmKazRtfruy4XVIENmAHhCwCoZ0hrZyjbV5KdgsvTsvUIAFDXEia/Te5Ty5LPtRZBgReVr1+1w2pPOabGz8AP9X0/BBTPExypYUPbxdajAEkJXwBAXefajwAAMFFLqOZ2tPVIHUtof8G3alUNPNl6pL1WVRpqBiJqbry4SdxyBGhn7+t/3/dD6OHT1jfqe9V1XcbPM4AtwhcAUNeS+mUDADA/2o8UELtLqX/cVQBooGHrkSrXrq7rhmDN4dY3yskevFBRCKYtSxVf86nAJAhfAEB9S2g/AgDAfOm9DdznKRVc5tx65HTrkbKyL0i2qigEjKDv++Ha/i7BsTzsui5DGxSABwlfAEAbc20/0uo12SkIAFDPwQR2WgN/qBmUesq4bM6tR2pWB7qJhdGnMH4GnmpoP3KT4Ki9jepCAGkJXwBAG3OdsG4VvtAjGwCgLtXcYBpSVh2Ya+uRaMtUs+XIxdYjP7BDWANYuGiPluW+78nXPYCahC8AoJ0j5fIAAJiwuVZzA+qYY+uRmlUvVlPZ1KFVFUxfhOY+JnghQwC4dnsngEcTvgCAtpTLAwBgqoZqbpf+esCO5th6pGb44lPf91+2Hs3JvAfMw1mjqkV3XQh1AVkJXwBAeyasAQCYKu1HIKkGQf+rrUceMLfWI9Fy5GDrG+WYSwCqisBXhiq+B9qPAFkJXwBAe9qP7E/aHQCgHe1HmKTGu2afFFTY0RTGSXNqPTKlliMZdq4DE9T3/RB6uE7wzF91XXey9ShAY8IXAJCD9iP7cewAANrRfoSpMo5obxatRyLM8WrrG+W87/v+9z3+9c9bj5RlwwTMy2mSV6P6BZCO8AUA5DGHCevaEzgAAOSg/Qjkk37Be0atR6ZU9aIFQSeYkb7vh/m/XxO8ItWEgXSELwAgjzkMGPbZecM0tSox/mXrEQCgtV9Uc4NUar8fd71Hn0PrkZrhi9sIrQC0NMxh3iT4C5xpfwdkInwBALm81a+QiTls9HSFLwAgJ+1HdiC00oxWCCPq+35K4YvVWIGJCHG82PpGOa6zQHPR+ihD1bMD7UeATIQvAOBbLcqd3nU58g6cJZBwBwDIcS+r/PNu3P+30Sz00vf91daDCzWD1iO1W46MEb6o3TLUNQ5mKK7fHxO8shc2swFZ/M1fAgD+9DomBH5pfEgOo3SfntmPJ3zRgLKO8GifVquVBRagtNu4JxquN0eNj/ZQze1D9AOfmuGafTzB5w33mdL9+rCA92rr0bK+th6J3dv7qBm+uBnp2lq7ZajqPjBfp1Gd9KDxK7w0PwhkIHwBAH/4te/7r7tHuq57mWDC9U1MWE9tsU4riGVpOai1kM2UXPV9bxc4UNIQvDgZFhC7rjuNz8kME+AW2x7vxP1NE3NfpKn5+vatXNEifLGK997ObU8atBxRWh9IJe4/zzNsZhueh7E30Jq2IwCwWr3v+36zysSp9iM7axW+sDuxDaVjASCHl+ud0PGfGSadtR9hClqFL663Hpm+vaoxTLj1SO2WIzsHRQBK6fv+IqqHtXa2Q5XWOX4mAw0JXwCwdNd9359uHoO+778kmbA+TPI84Hta7matXSYXALJ6fbdaWqIJ8KH9yNSqX7RqlaJKSButwhfuZe/XIlgwpfDFp5ivmCLBfZi/DO2TD3aoEOQzGRiV8AUAS3YdJUa3JJqwHtqP3Psck2o2ETSx4zQXzco0T7SHPACM7d26dd49VHPbTasJeAuTbRw2+r21xk1TqxDYoqXGQbQefbIGLUe+d73fRe02R0dbjwCzEvM07xK8phfmCIGWhC8AWKrbKM/80ORqlgnrD1OZsG68C8eEdX2twhcZ3pcA0Nr7h3paJ6rmdqSa26Noo1dZ46osU61eUFQs3N00+NW7Vq/QcgTgWxeNruN3jRlWA3gS4QsAlmhYuD35UVAg0YT1wcQGDa0WxpVqrq/VMVf1AoCl+3i3dd59VHPbSe3d4H+aWIWQOWhWxW2m4Yux3jstAga7Xp9qhi/e/2DzCEBzcZ364T1qBYdd12VogwIskPAFAEv08rEtCxJNWL/YtRRqA/pkL0AsDhw0eqUmHQFYsusnTmprPzId7mfrmnXli67rWoZL9tFi48HhUyuhNGg5MvmqFz4DYBn6vh/CeB8TvNhz1x2gBeELAJbmdQwCnsKE9dO0Whg3WV1Xy+Ot8gUAS3UTFdwefb+VqJrb4RTaj+wwVhiT/uR1zf1+dpLhi4atR566U7vm5ojbvu/HDl+0GLcbs8NyZJhLPYg2KABVCV8AsCTv+r5/8i4a7UeerNXC+KFEe1UtFweELwBYotuo4PbkBTPtR55MG71laHa8tY/4oRZVHp4apqgZvhh9HuCx1UABdrzG/J5kLvXVUysbAexL+AKApRj6o+5806/9yJO07F9sQFXPrMs0A0BCJ3sulqnm9nja6M1ctOQ4bPQqM4wrSxizakyr1iOPqhbSoOXIFDZhwKM0DGGaR6gs0Vyq6hdAVcIXACzBp77vn1pC9D4mrB+n5YBWqeZ6mh1ru7QAWKDX+37+JWs/kn0SvNX97KMXf9nbEoLEkw3zNGw98tiNDjU3RNzMaPyjUiXNxH0Q9Z0lOObHE9jIBsyI8AUASzDKJHMM1MYIcewrdfsRfbLnL0o2HjR6oddbjwDAvH3apXXefRLtQHyVfBK85UKn6hd1LKGF3tQXujO3Hql5/ZrTju2lXt+E6lisCI+9S/D6H7qWtpzHBGZI+AIAnqDv+2EC6GOCYza0H8mQHv+eFruUBsdbj1DCEiarAWCuVHP7sZb3G3Zm1uF+Nr+HFspKOf7RdalBy5GSIZQlBtt/33qkPOELlu6i4Tzh2lBdLEMFOGABhC8A4OmyTFifJy5L3GxCUSnBKkxWA8BEJWo/krmaW8v7DZXcCovF86NWv79ipcAHQwRjG/t1xbWqRTjgR+PJmuPNT4VbJbQIIrRmPNmeMMrC9H3/e5JKwmfJ2zgDMyF8AQBPlGjQYML6fiasyxO+AIAJS9R+5EXG4Gzc77faoXmYOGA9Fy3PuZphgjm0eGgx3s0UvkjbbnRHS130tNj7rRafcRnueRYtAnqtKwkfzKyVE5CU8AUA7CBR+5HjpO1HWvZLVPmioK7rTmLA2kTFnYIAMHfajzxM65H5ahkkdi/7NCVbbnzPj86PubQcaWEOgaBdNKu0A8lkuPd8JeQKlCZ8AQC7037kOxovkA+7BZc6qVNDy8UAu1UAYCTaj/xQy/vZDFX25qzl/awqbk/QqPXIQQTOt1Su1PM+qvAwrpJtXHicFvM13ksJxDUtw73n3KoKAckIXwDAjrQf+aEW/XnX7p0sYxQtJ6vtFASAEWk/8qCW9x1HdmWWEedZsypulc+rmgucJa8jmVqPfO/xEmpUvVji+KpJ+MIGkW+0qHYl+JZEknvP4zshO+EcYFTCFwCwB+1HHtRyIidjK5bJiwmjw4avQ/gCAMaXqf1ImsBB3/efGx8XrUfKaHlcb6KSQy0tQyZjatF643vnyfceH9ttzDXMTcYWU7Us+bXfJYhChjm7i43/LpwDjEr4AgD2l6n9SKZBrNYj89O00kvjdjYAMEvajzxI65H5UcVtYhq1Hjm8GwarXDVlriXxj7YeqazhmFJ1zr+0CIa5/iYSAdd3jZ/RUGXMvRZQhPAFAOxJ+5Hvaj24Vf1ifC3P8wwVZgBglhK1H8lWza116xFh4hHFIkvLahBzrGRQS4bWIzUXz+cavlgyraT+uA4LobA23HveND4aGcLHwAwJXwDACBK1HxkmaVMMHiKU0nIS/2XXdUp7jmRh/bEBYIkyVXPLskjV+v7DjsxxtT6e1c6nBgucpV9bizDC3WNYq2rKTewKr6FmG5xMaldSWQlf/KnJcVBFM58kG9kOE7ZwBmZA+AIAxpNlwvptol1yLXd3HeiVParWA1I7BYEpMtHOZGg/si0WQFvuyjwVJh5HBHqOGz6Fj7HQxA7i2NXe7PBi/V9ifH249RNlXFR8jdXDF0muaS3eiy2vP5m0mKvKME/HPSIU03oj23Dv614LGJXwBQCMJFH7kVWiMqWtdxcoITiCBJPV17EgBDA1tRZqYBTaj9xLmHgeBImnr/oxjOp/q8rvw7mfKxk2ijSZp9BK6qsWx6BWJRl203oj28E9lY4A9iJ8AQAj0n7kWwl2Cx7qKTqK1ueSnscAUI/2I98SJp642Gm/mJYjYY6Vl1qEEtZjyVrhi09C51W0qkIjfNFmU4fwRWKxka31vY42b8CohC8AYHzaj3yr9c4dE9Z7iMnqV42fhp2CwOQ0LKttgpm9aD/yrQhXt7y3H8LEFgX2cxbnUystFtRrhy+Kh0satR55GSGwo63vlCF0Xkere6VFbwxpuDFGoCm5BJXXWt4jADMkfAEAI8vWfiRBT9XWE0jHql/spXWJZi1HgKlqFYBstZuTGUnWfiRDEESYeKJiLNT6ftaC+nhqvxcPK47tbxu8vhYhhNbzEyvhi2ZavX7B5GnI0m4OYG/CFwBQQKb2I60naxO0HlmZsN6NyWoAWDTV3P7S+n5E9Yvdta56sVLFbVQtjmWt8dCH2MhRTe3fF5pX54zX3eLz7TBJddJWarXv+Ubf963bh/EIMXf4zrEC5kD4AgDKyTJh/SZB5YeLrUfqGnZNNhnoT9xFgslq4QtgqpRWZtIStR9Ztb4fiIUbYeKJSRIkft9ogXuWO+wbtR6pNR4S0qlL9YuKKrfv2XS99QiZXSS43wLYm/AFABSi/cg3MkwktQ6ATEpMjrxq/Jw/NpqsBhhDk89drZoYU6L2I0cJ2o9kqH4hgPE054LEdVTeWT7HkMJNVM+knlbVEJZaxahV6ETViwlJNo8KsDPhCwAoKFH7kcOWu+ViIaj1cTBh/TQZJooFZoApa1FWOkPFLeZH+5E/ZLg3OouALD8Qx+nNwz9V3I1y9+Pr+/5yhp93LYMXtY9ly00hm1q9N48Weh1vVYXINXhi4nMzwzwqwM6ELwCgPO1H/mDCeiKiRctx42drshqYuhaLxK1KaDNj2o/8IUmY+EA49dGWHiTOssBdytyqRLQ8X2vfO7QM0W1qec+0qJaoDVuOrIQvJivLPCrAToQvAKAw7Uf+EFVAWvduPFhK6d9dxfmR4RipUgJMVkwytyh1r1UTRWg/8qcM90gvIijLd3Rdd5YgSHzb+HxptdBZy5zCF9d93wtPVhbzNNeNfn2rKhCttJoPu9bGdJri72ZOCJgs4QsAqED7kT9l2Kl3HBOy3O8yQW/s25n2cgaWo9WuTos3lJSp/UiTam5JwsSrloHq7CL8lmHB5sOCFv2qB7PivTiXXdE2B7TTqirC4cJCdFqO8GSJgr8ATyZ8AQD1ZGo/0mqgn6U/7y+Ne4an1HXdcI6+SPDcLuxQASauVZuvL1uPwEiytR9pGD7IcAwOBFW/K0OQeGXHbhVzeQ8s7b2cKTjWcnF+ERtCYo6h1TXZ5+T02TgFTJLwBQBUov3In8cgS59qOwY3RBglw9/mVi9zYAaEL5ilRLsQm1Vz6/s+S5j4uHELlnTieLRuNzJ4H2GlJhYUMp/DwurHludKqP37M7XEaRm+OG5VxamyVp9Tt33fq3wxcdGS6d3SjwMwPcIXAFBRovYjBw3Lm14kmbA+UuL1DxFCybJLUNULYNKi5H2ThQWTzFSSqZpbq4WrLEHRtwsrXf9dcRzefu/7lbUOxSwiYD6T1iMZAiSLDW7GuLPl/MysA3RR9eJw6xt1qHoxHxdJWr4BPJrwBQDUl2XC+kWLydpk1S+GY6DKwh8TExl2IKl6AcxBq4XQ661HoADtR77KEiZexTFYdDu9eP1ZQtVNq1400jL4N+UF1lsLxCmoflFAfDa3HNt7b81EsirCAI8ifAEAlWk/8lWmCes3sSNjkbquu0xSnnml6gUwE60+Uz5vPQKFLL39SLIw8VC57Gqp7fTidV8lqeC2ShJMWtK5MOVKhh+WOvZJdr1qvUg/12qc5w2vy7dRGYeZiOp+GaoIAzyK8AUANLD09iPJJqwHvy0xgBHBi1db32hD1Qtg8mL3datKQsIX1Lbo9iN9qmtX7wAAIABJREFU358nKoO9yABGwuDFuyRVLxZTCSUW5KZajn7Ji8NpztF4z7asHnbYdd2s2o/EZ/KbrW/UI3gxT1nuOwF+SPgCANpZdPuRZNUvVksLYCQLXgzOVL0AZuCs4UtoWTabBdJ+5KtMC2ZHSwpgbAQvMrTOWwkSNzXFhdabRDvz3T+0f+++nUv7qLg2t67m4Vo8QzFfNKugEjBfwhcA0MjS24/E62+5SHWfRQQwEgYvPvV9P9dyq8BCdF33rOG1dSivrPIF1SVrP9Kimttlkte/togARsLgxWrhQeLWi/dTHEfYmZ9Lhr/Hh5lcuz/EZ3Ir1+6J5yvRfSfAg4QvAKChZO1Hqk84JJywXkUAI1soZDQJgxerhCEcgF203Ill1yotLb2aW7b7mCGQ8GUuu6jvitf1JVnwIluQ+NnWIzMWC61Taz2y9OB5qpBBBKfeb32jrsOph3JiruF46xt1qXoxf+aPgPSELwCgvSwT1seNQgcZB06/DBMHc9o1OLyWrus+Jwxe/GpnCjB10du65fXVDlqaWXr7kbiP+XXrG20dRAWMFmGUYuL1XMXryyTbeGZR4Yswpc9BO/NXq4zhsAyBmOMIMExO13XnCeYablXUnL+4fr5b+nEAchO+AIDGkrUfOY+y6dUknbBexcTB1Rx2DcaiYLYdgqvYoaZnJzBpsdDbetFH5QuaSlQG+qDRAtp5wp33w7H4V9d1s9gFHK/jXwmDF+8spKcwpQXXbM91qe1yvtH3/VWS6/irqQUw4vr8dusb9al6sRwXE6x4BCyI8AUAJJCs/YgJ67+s+2ZPtqxh7ED5d8KJ6sHpgntjAzMQwYvWu7Cvo/IAtLbY9iNxP5P1fvHNUP1sqoHi4XlH9bY3W99sb7j+Lj5IHIvWrZ/DlFqPpKrSITz0jSzv51dTqcQZQZEM1+db4YvlSLaJDWCL8AUA5LHY9iPJB04H0YbkqnZVkH0M1S66rvuSZAfKfX7NMFELsKuN4EXrqkLKK5OC9iNfw9Tvt76Rw3Cd+k+Ecicjnu9/ElZvW8s6fjneemQZptB65KPA5FcpQwXRsiJLiGddiTPlHMTwvJK1Nb2wsWNZYj4p630XsHDCFwCQhPYjXwdOmfs2DpOY/x1KambegRKTIB+i2sXh1g/kMOwSnGw1EaC+4brWdV2aRa74jMwQvFhNrM89M6f9yNfqF5l3378dwrmZrqf3GZ5f8hDx4GcVA9KZwq53n9l/yFyJJ1NIbbjP/Fy7mtOPxGadz4mCcapeLNdZkk1sAN8QvgCARJbefiTK9l5vfSOXoaTmMGl9nimEEaGL4W/236Hc9tYP5HGrPCTwFBF0GK5rv3Vd93uE4JpN2seiZZYJZztoyShT+5Gq9xwRpk61SHaPw7iepgthbIQufkscIl7FtddCXzLxeZh5LHkrfJFfsuoXq5ib+VeGSpxRXXMIH/+SrK3puaoXy5S87RuwYH/zxweAdIZJ0C8JBrND+5HzBn2MX8aiVqbB/F0HsRNv2D34PkpcNtn5FrtgziZUXvjULsEHDYsOJw/9wNLMpJf6ydRKvVdy+cjgwOZE80GE4N50XXcdQcEPNQIIsUh5lqz8vZYjpDO8H+Oa90uC5zaEta5qhpSG+5yu635O8vofsg5hnMeO4csWi1exmHgaX5kDF2s3mYPEDRZnM1S62XSZ+L33IfEC8XXi9j4tnEcILJN1Jc73ETao9rkW49PzpHMON8JwyzYEpmKcttSWW0BCwhcAkMwwIRMDh38leGZDuOBDzcXymLB/GW0zpmDocfqq67qb2Ml0Wfp4xfFZf2UOqdz1a1R34fuy9MzNZA6hhWOTQfe6irDhj3wvkHQUCyy/RBDjKr4+jzUhHdfbk1hoy3a9vXFNJathISTeP62vfetqbt+7jhQRr/8keTWytcONa+nHuJ8tukgcAYGTuJedwjFaGyoXvEy+w7rpzvgEPmQOX2w9kkftczptG8/VX4u550kDYev5h49xrS4SxI3r9HqjR+ZgnKqarOI8+K8jAWQhfAEACQ2LKTGYzjAZeVm7J2vf91cT2TG46XBjN/btnUXAq62ffqSY9FhPUJ9MeAF3KM+sHCSwi8csJB3F13AdXsV1+HOEO77EosKPgnHPYzHgefzO7DtAVb0gu9Mk1cyGam5nDXbGnsa94JR2k7/YaPO0GWr7sk+4OFpFrb9OJrzDXgW35CLIn7GKg8Dkt6ZwDThNviHkRbTX+i1a1+4193DnOv1yIpWIPu4z18J8xLX/XVSoBWhO+AIA8srSfuSoRfuR2DH4fKKVAA42Jq+HiYxV7JRbT9Y+NEHwbGOhcS475a/tSAH2sEsA8GDmFUduo00ApJWs/ch5VHOr2X7k96j+kb2d3vfcDbWt4p7u941g2/esw2zPJrKA9xivLZ5PRsbWI86diYkNIVk2xPzI3bmHm43r9Peu1et5h58mGoi7NcfApmHOMqoIz+W+A5gw4QsASGrp7UdWfxyD0whgzKH/7MHGIuCS2g8MEz8nycszA7npQb7twnWVKdB+5GsA5SSCt1MMYNy1vh4vrZXW+1Kl/QuoWrHwB6HyVjK2HlGtapqybIh5qsP4mvO1+tS9MPfIXrEGWIj/5Q8NAHnF7qqPSZ5gqwmjk9hlx/RMoS82kFgE8PiWqhdMzWmct619bT9S+zlEeFnrtekaghdT2l3909YjCxMVbjKNH68n0K6meoim67r052qMY1VXyOdXlYi4T7SheX/PtwCqEr4AgPyyTFgfRenoqmLCQwBjem6j4oW+2MA+njl6W86F2piSWAitfg/5HectQl1RNeH11jfIbmrBC/6SqdKEqhf3m0TANtmGGP6YF8pyT0FOZ0nmUIEFE74AgOSS7bZ422jCWgBjWgQvgLGofPGtYfesqhdMTpy3nxI874NWC6ECGJMz1eDF4itfhEyBBzv0p+802mnSlsqa/FCcHyqOAU0JXwDABCTbbfGhRYlQAYzJELwAxiR88S07sJmyRVdzWwlgTMmUK17U/tys3q7iMWLsmGH8/DGq/zBhcT69tJu+uZfeTzxG3G9lCP0CCyV8AQDTkWXC+rBVmUcBjPSuBS+AkWk78pdfXV+ZsmTtR5pUc1sJYEyBViPzkaHixFSqXrRY0J5UlZa4B7Obvp3Xfd+nDHuRls9yoBnhCwCYiGTtR950XXey9WgFAhhpCV4AJRw5ql8N7UZM+DN5idqPrFq2JYgAxj/tok7nneDFrLQOPtwKXzxoctXN4tr989Y3KO3nOPbwlPfrcF17t/UNgAqELwBgQpK1H7ls0X5k9W0A4/3WN2nhfQQv9F4FRtNqV3pCt3ZuMTOLbz+y+uu+/kQAI4Xb2FWdpTLLPnx2hgStRz4YH81PhAjNQ9TzPo45PFl8rt84ckBtwhcAMD2Lbz+yism02Jkmyd7W1x2CJhaBArQc+cOpqkLMifYjf4n39nMV3Zq6iRDxXHZVH2w9UtAE2gC0rDwxlaoXPFHMQwhglKcNFGNwDgHVCV8AwMRoP/KtSLIr21zfcLz/OZMdgkBOdu/+UWbZ4g2zo/3IXyKMoqJbG8M5+FzAbdZafYbe+Pz+oSZVNMcigFHca8ELxhAhQe9VoCrhCwCYIO1HvrVRttmuwTrWE9UmFIGSlh6+UGaZucvUfqTpe22jottrgeJqhupt2ubNXMPWI1MbJ7UIIE3+Pk8Ao5jXM6pGRA5n7q+AmoQvAGC6MrUfab44NOxY6/t+mMD5deubjGk9Uf3FUQUKW3LbEWWWmb1k7UeaV3Nb/XFMLgWKixvajPx9jtXbMpzDSbUIQkxq4VgIaXcbwTn2dxvXZ8ELRhXXuDNHFahF+AIAJipZ+5FXXde93Hq0gb7vhwHVP2JilfFcz3WiGkjraKF/GsELFiNb+5HW1dxW3waK3219k339qs3IqLK8dx8UC7k1Ny1cO8eWJc4xrVD3M1xPnnnvUEq8TyfxuQVMn/AFAEyY9iP3i56OqmCMY5hA+nlYBDARAtTSdd1SW478LHjBAmWq5pYmZBqB17+rgjGKdYj4zA7/xapZ/cKu/cdJMXcwlpibee6avRNtoKjFOAuoQvgCAKYvy4T1QaaJpuidfRaT1tLtu3kfuwObt5UBFmdpLUeGz/F/ut6yRNqPfN9GFYyf7ajeydJCxEtu1/UjNcMXLdqcjKH2NWZ2Fc6GzzOtUJ9kqFb6D9U1qSXuOVUWA4oTvgCAiUvWfuRFlvYjazFpfRJ9WLUieZxPMQlyGoNTgNqWVPniOoJuU12sgb1pP/KwOD7PIhjLj93G4sqzhYXahC++Iz5ja4QLPk54/KTK4Ui0Qn2UodrFs6haCtVE2Md7EyhK+AIAZkD7kR8b+jsOg/uYiLVz8H7r0MWJSRCgsaWEL97FjmxBN9B+5EFR1W04Rv8jhPGgdeW2cyXsi5vaeKFGyFGQkq+G8bT5h3sN81b/o9oFjWk/AhQlfAEA86H9yCPEIH89CSLt/gehCyCbuYcvhuvu3008w1+0H3mcKGsvhPGt2yjz/z8qt/GA0sGIW+EL7op7veeu13/OObx0jaa1mPda+nsSKEj4AgBmImH7kbRJ8tg5eB47UV5Hyfcleh+Lf0IXQDaHM/2LDKG/13HdVd4b7kjWfuRDxmpua3dCGL8udGf1cE39OdqLnFnQW6UMDGVRofXIB9VWniZryG1sCw/N2ehBVmeq0gClCF8AwIwkaz9y0XVd+r7D0Y7kefRkfb+Awdd1TFL/79gZaPEPSCU+O+Y2Mb0OXQwLhGmrQ0ESqrk9QSzqnUVlt6WEiofPiH/GNfXCgjdPULIyxdSrXiw9vFTcgkJzt3Gd/h+hC7KKe4czfyCgBOELAJgfE9Y7iJ6spxsT11lCLGO4icmdocrFc5PUQGZ3Jqan3iLq48YCodAFPEKy9iNDNbeXW48mFJXd1qHi9cLenFrsfYx79HWAWHuH9qa4oFrqs/hmBuek8EUl94TmslR82tf6Ov1MCyimIMZnc3n/AYn8zR8DAOZlmHiNlh//SvDCjruuO4sS0pMQoYRhAHYZpaZfxtdJBEqm4jpex5XqFsAUbSzAnsfi5/or+7V4ff39YNIZdjPcO8b7/jjBIRzuCZ9NKbga155hYe+s67rnG9fPo60fzus2KglcaefwaGnb5GQxBO67rvtHgafj/OTJ7sw9PIvr9OnErtUf19dq971M1PCe+68/HjAm4QsAaisx0fEji1t4HnbdFJpU2sVkJ6I2J0NWf5TCf74RxHiebAHwU5zrVzHxYQJwP58bXa8o78ziRBqP/nyO3aRfd5TeuRZnWJi9XS8OmnhehBafD0v9TH8Z91vsIUK4nyPI9lNcO9dfmRb41tfSK+HhndUunz7Jv5EWCN912aCaiXumEPePF9G+dX2tXt/vHm79H9r5c95BBaKd1H6feY/9wPDe67ru7xXnCLLc17eY71r6+djic5ZGa1Hd////+2z4AP/31rdgP+/+j//rv03LhB79n/+ffutB2M+76//n/85S/hZIIBYAn0e50JP4z9ITIzcxYFlPpH8xgQgs2ca1ePOaXOpafLtx/f36ZYEQmLKu607uXD9rBIyv79zPfhZcA7hfhDGeb2wCeVYhPLd5z/slrtPmHQDgEVS+AADY0cZOwm9EydDNr1Wk6B+7e/PzRhr+S3z9boEPYNsD1+LnG9fe9U6m9bX5Ib/f+fe+TjSbcAbmKK5tW9e3CGWsdriGrr53HY3FO9XZAJ4grptb1+qNeYe7cw0nj/zXN+cd/rxuu+cFgP0IXwAAjCx27tm9B9DQRmDNBDLAE20svrmGAiR0Z95BCxAASOJ/+UMAAAAAAAAAAOxO+AIAAAAAAAAAYA/CFwAAAAAAAAAAexC+AAAAAAAAAADYg/AFAAAAAAAAAMAehC8AAAAAAAAAAPYgfAEAAAAAAAAAsAfhCwAAAAAAAACAPQhfAAAAAAAAAADsQfgCAAAAAAAAAGAPwhcAAAAAAAAAAHsQvgAAAAAAAAAA2IPwBQAAAAAAAADAHoQvAAAAAAAAAAD2IHwBAAAAAAAAALAH4QsAAAAAAAAAgD0IXwAAAAAAAAAA7EH4AgAAAAAAAABgD8IXAAAAAAAAAAB7EL4AAAAAAAAAANiD8AUAAAAAAAAAwB6ELwAAAAAAAAAA9iB8AQAAAAAAAACwh785eADwOF3XncQPPl+tVj/Ff38WXw/5El9rn1er1e/DV9/3nx/4/wEAAAAwU9+Za/op/vdD1nNLq/jP9fzS577vf3/g/wcAFCR8AQB3dF33PAa5m18HWz/4eMff+8mu64b/uI1B8jqkcWWwDAAAQEZd1z1mE8JDbERgcSJksZ5nerYqP9f0yTwTAFncuX882Xhajwkc3rUZQFxt/u++76+2froy4QsAFi8++F/Gh/7JnoPfXRzEoHk9cH67+uN53cSNw3DDcGVyCgAAgLHExoOf7kx6350AH8bLh2Mf9FgcXrvd2LX/5e5X3/dftv4BSKzrup825piGr6MGz/Z780xXG/NM3lsAjCbuLZ9tBA3HCBve50cBxMH1RmWo3+Ozr8p9pfAFAIsUNwKnDQfBj3EYXy9WfzznYULqQ9wofLBjgV10XTec979VOHiv+76/3HqURYvdXv8ueAz+2ff9h61HeVDXdVcPDVyfqu/7zhF/WIX3Am296/v+3N/gYV3X9Q/+wG7+kWGn01SUuhb5HMhjY4fhOmSx3mU42uf+SA42ntPWc7uzi/+zzQlktLGx5+V953ESwxzTq/ganvN1zDFdek+xZtye09j3zu7X2Fd87m1Wdcr22bde87kbRFzFfeXn9dfYn4HCFwAsRuw8GAbBZ4kDFw852Bgk/9Z13ccIYwhi8BQvKx2t4fcIX1Db5TD4c00EAJbmnpYGWRd/d7Xexb9eNF7FxPkHYQxa2QhcnE50nukovt5EVYwPghhUcDFsADBuh2nZCFu8bFQ9fEyb1aHWm16vxqpALnwBwOzFjcF53BhM+abgrhfxNQxahgHyhQEyD4kA0osHfmRML4bfZzBNZQdxvT9z4AGAJei67vNEF33H8OfE+UY7hUsVcCit67p14KLW+LqGoSrGmwhiDBUxLmz2oZBD43aYhvi8WwcuRm9Dl8jBxlrLZhhjp42v/2vrEQCYiSF00XXdsPP+v7E7Zk7Bi03rihj/GZLjseMJ7lOr6sVa7d8Hq5gsdB0EAJZiqcGLu9btFP7ddd2XruvOYyMGjGLYXNB13dlwfq1Wq3/NLHhx11G0Kx3eSxfeSxTwJlpCA8kMgYthTaXrut/j8+7NzIMX91mHMYbPwv/fsPF1aOUdGxt/SPgCgNmJAfFm6GJJjmOySQiD+9QOQ9jFQCta3gAALNdh9PX+byweGBuzs5hjGnbpD6GLXxa2AHUQi27r95IQBmMybockYhPrxUbAcM4bWXdxN4jx4L2l8AUAszLsQogB8dJCF3etQxhS5HxVueXI2pHJGRo5jAlSAACW7dXGBgXjYx7tTujirUWor++ldQjjUTt/4QeOjNuhrajmcBWbWJdY4WIXLzYqrd0bwhC+AGAWhkmU6HX7iwHxn276vv+89ShL1aoFiNYjtPJW+AcAgHAcrTotHPNDw2KU0MV3vYp2JBbNGcOZcTvUtQ4XRpWL3+Ieiacbgir3Xr+ELwCYvKh2caXX7ZYPW4+wZK1CEKdbj0A9ypgCALBpvXCsRSJbhh2ssbHnN6GLBx1E2P27u37hCeeScTtUcE9FJ1Uu9nfv+ovwBQCTFTcMl6pdfNfF977BsjRqObKm9QgtHZtYBwDgjmH+4JdoRaIKBuv5pWEO5d829jzJYZRe/+C9xB6GcbuqqVDIPaEL6yjj+NT3/e/3/UvCFwBMUizmXsWuFbZd933/ZetRlqp19QmDaFo6NxEIAMA9jqMKhp37CxZ//8/R657dvIj3krE/u9ISCgoQuijq3qoXK+ELAKao67rnMTC2G+H7lOxjU+vwhdYjtKSMKQAA33MQO/dVS1ugjWoXSq/vb3gv/SuOKTzVgQq+MJ4hDDe0hhK6KEr4AoB5iODFlZuGH/ruhz/LElViWgeVtB6htRd2NAIA8IChDYmd1wsxjE+7rlPtoow3w7E1B8AOXhm3w37i821YO/mXYGFRD1YdF74AYDIELx7twQ9/FidL2U/lR2nNZDoAAA8Z2ppeuWect402I6qpljMc288W0tmBqpWwo6ji9TnaqlHWgxtfhS8AmATBiycxUGFTlpYfWo/Q2pD4V04aAICHHAlgzFfXdafRZsTcUnnrlj7mAniKw67rzh0xeLyNahe/+Hyr5sHwxd+2HgGAZGLS40PSm4fr1Wr1+9ajf3ne4Hk/+OHPciRpObI2tB553vf9563vQD1vu6774DwEAOAB6wDGSd/3D433mZChrUxUN8nqNnYsD77E132exdeq0ZzTU/02zE30fW9Bnccaxu2XqvrCj0XA7ULooqqbH80rCl8AMAVXjXuU3cZz+BxfX3ZZuIvqHT/F4Hj4z5MCA2UtR9iUrdXHqcoDJHAZ114AAH7sU/zEVfzn3UXhL08Zg26Mi1cbY+PnsZicqQ2EAMaMJAxeXG/MMw3voautn3iCaO/xPL5OEvb5fxsBDFUweKzLOJeBe8Rm1YvkocK5+uHGV+ELAFLruu6i0QTMddzoX421Q3rj3/lmUB3VCdYD5JM9X6+WI2zKNrHxUviCBIYqLGd931/4YwAA3OvnYWK5RLD/zvh6a8E5whknG18td3IexcKGBeOJisWpqwTBnttYrLmK99aogZ4Ib/z5fop5ppMYg7/Y+j+08arrupUABo90bNwO94t7pctkodUfWVd3Wod4f9+o9vT7U9df4nPu2cZD67DW+vGSlaG27l/vEr4AIK2u64ZB4puKz289GL6oWZI+JrS+rFOTMTnwcmOg/JQbBS1H+CpZy5G1Q61HSOI82o+oFEQrv2/sJJ6qnwp9zvyopdsUuLYAU/e51X1SjBU+R+hhvcBwGmPjFrv5hwXjzxYApydJ8OLjsEDW933VuZp4/w4Lc5cbc0xnCeYIBDB4ivNoP6L6EISodJS1PfvazZ0q4p8LhA7vVmK7NxARx2sdyBj++/HWDz3N7WM+04UvAEgpBoe1qjjcxsTORYYb+ngOl+vXHyGU00fsVtByhE1jtRz5NMKN6SatR8jgIK772VrzsBCxsDTpMroxifHvrW/s72zf0tsAzEd8Zg7jh7MYG5+NPD55DMHdiWkcvLiN+ZyLDOfM5hxThJnOGpepF8DgsQ7i3DVuhz8+24br5m8Jj8U6bHEVVcTT3C/dN7ewZ5W1R4Up/9fWIwCQw3mlBOewC2HYiX+eNUk9pCn7vh8GGv97tVq9ixua+2g5wqaxJjIuR96dbdBMFi9iAh8AgAmIsfEwSf6PyhWkDoy3J+dDg+DFbczZPOv7/ixjWGcIM0Xo4X9Wq9X7rR+oZwhgnDf8/UzHiwh9w6JFa/ZMwYthfeLX1Wr1977vh8+9077vL6cQVI3PwiEg+bLv+yGs+fd4Ld9bc9kkfAHANEX6sHS7kWFQ/Do+ZCexe2UIh0RIZCiT9fqeGwItR/hq5JYjV98r3bajw3iPQwbrMrwAAEzEsIsxQhj/vGdcXMpx7DgluaFNQYPqKO8jdJF2Y8+mYR4sQhh/b9gK7633FI9k3M6ixedazdbs33N7J3BxNofW0hHGOIs1lx8FMR41Ry58AUBGpXupDr3ET4Y05tZ3JiKSpOsQxq2WI9wx1gTGTZxXYwd7TLCQxUFUWgIAYGKi5/bzqGhZg/vG5GJncM2WGsP80j9ix2/60MVdseA0BJl+jrml2n6zOYNHOHT9ZakieNGyVdQqQnrDJtaf5hK4+J47QYx/3gkofnzsZ73wBQCpRCm5kjsU1sGLWdwkRIDkmcVs7hjrfPia5o33y5gTMVo9kMkbZUwBAKYpKkS+jMXj0g7t1M8r/jY1dwa/6/v++X395KdmKL8eQaYWVTCuononPOSNoA5LkyB48SkChpPexLqrjXZ361Zdjz4GwhcAZFMyybwOXkxuN8JDYrJptolTniYGo4cjHbar7/z3fWk9QjalKy4BAFBQLB6/rnCM7b5OKMaXtXrh38Zi1KzOhWhFclIpyLTpQBtdHmlxi78sV+PgxWboYvIBw32tW3VFxbVHEb4AII0YLJeqenE7x+AF3GPMnVilwhcr1VpI5qjrOhPpAAATFrsySwcwhiC5Sn6JdF33U4Hx6vcMm3qezXkxKoJM/6jchuQoWsbAQ4bz5OyB78MsNAxeXAtdjEP4AoBMSt5AC16wFGNNBN4Myd6N/y18QTZjTwaeKXcLADBtEcB4V/hFGMvk8iGqJ5T2PtqMzH5uKRbdTmIhrpY3gk2zNPa4/dy4nTmLjUG1gxfD+/TnubTSykD4AoAUYqdCqUHWO205WIKCLUdW8R4ac9B8YGKFPZ2OfU4qYwoAMH3RDuJTwRfyIuYwaCwWqUpVUN00BC8WFbqJOYDaAYxL763ZKTFuVyWFWeq6bni/vK382ob7pedR9YiRCF8AkMXLQjsVbubWhxMeUKrlyEOP7UP4gn38XmDS5TgGuwAATNvYC353Gcs0FpsPaixSLS54sRZVPmoGMATi5+f3qE4zphc28zA38Zn2W8WXta52cXKn8jEjEL4AIItSN82CFyzJmO+j+4IW9z22D4Nl9lViYu7CbisAgGmLhYSSuzhPth6hthqL9IsNXqw1CGBYWJ+fEnOzqqQwG3Eu12z3cR0t2lW7KET4AoAsSkxc3ES/V5i9kVuO3Hwn9Tz2bgWtR9jHOp3/fuSjqIwpAMA8XBSsfiF80VC0Gzkq/AwWH7xYaxDAsLA+Hz8VHLfbcMdcXBWqCH6f9zGfpkV7QcIXADTXdd1JoRsMN+EsSemWI+vdYzdb39iP8AX7KnGtfxWfTQAATFQsGJfakHG9GxdWAAAgAElEQVTYdd2zrUcprlK7kY+CF9+K99PLwu181iysz8fzeCUl/p5vjNuZuq7rLiqECdfeDZ9tcT2nIOELADIodaM89i59yKx0y5HHfG8XwhfspdAumpXdVgAAs1CyotnzrUeooXSVuuuRNzfMRoy9ai12v4mgDTMQ587HAq9E1UomK6oBv6n0/F/3fS/UVonwBQAZlBhMfZTiZClGbjmyqhy+0HqEMZQYQA7vqbOtRwEAmIxY8CvVKsHCcGVd1w2hiOOCv3Wo6vDSfNL3Ran619/9gXFZWJ+XEn/Po2hDBJMSm31qtUt/rTV7XcIXAGRQYsJi7AViyGzMXTnXMUH5PSUqyghfsJeC1S/e2m0FADB5peYHtB2pKBaqSi/Gn/5gPMwf46/LQuOvu461lZiPvu+Ha/GnAi/orTZQTNBloTbsd/1d8KI+4QsAMhhzx/6a8AVLUqvlyLrP69g7x4Qv2MXdSbhSE7F2WwEATFuplqQW++o6K7xQ9Wvf99rXPt7w97ip8HuMx6btbivPUlUqLC4zGVEB+EWF5/s6qhVRmfAFAE2VSrC7sWAp4oa9VsuRp/zMUxxE+VjYWVz3S+yiGXZbaT8CADBd5gcmLna1l7wnvy64KDxLsTGjxjj+yHzBpH1TSbJg9Ytj5wlTULHdiFYjDQlfADBHNZL3kMWoVSMeudNH6xGyKjVheh4DZAAAJiYWiW8LPOvjrUco5bxw1YvTOE94glhI/7XCMROMmZdSf88L43YmoPTn2eBnwYu2hC8AaK1EL339OVmSMUMLH7ceuUdMsIw9efnCIJl9xblZovfwgTKmAACTpvrFREXVi1cFn/2vqqfu5bzCJqjDUpVzqa9g9YsDbWrIrOu6YR3kTeGn+L7ve++DxoQvAGjNYivsKFqOjJmWfko7kbFbj6xUv2AkpXbRvIj3HAAAUE/Jqge3qirsJyqG1GjT6O80L6X+nq8EdUisdCjiutL1mB8QvgAAmK6xF4Kf0k5E6xFauze81/f9l0LVL1bKmAIATJbKBhMU994lx4ln2o3sL9qXlqhksOk4do0zAwWrXwwujdvJJkJBJduVDWHClz7TchC+AACYrjEnoW5i0fqxSlS+0HqEpzh64GdL7aI5tOMKAGCSLEZM01nB3vjXeuKP6rTC77Cje3oemuMpdc4cOldIqPTnzdkT53UpSPgCgDl65q/K3BVoOfKkShZxQ3+99Y39qX7B3gpXv3hjxxUAAEOA3UEoruQCqsXZERUeg629tGFjcr67aaLwOfPWuJ0suq47jVBQKR+FCXMRvgBgjkrezEAWY4cUdqlkUaL6hfAFYylZocKgFgBgWkos2NphWlAsVpWqevEp2h4wrtJVAg/MGcxOyXPmYusRaKPkeX5bqfIQTyB8AcAsdV2n+gVzN+aEw230aH2qEgvQWo8withF82uho3nUdZ32IwAA02EH9PSUXExyL19ApeoXKpbMSOFz5rjrOucLTUXl4pIbRc/7vtdaLRnhCwDmysQKs1Wg5chOO376vv8cCeux2cnCWM4LnaODM0E/AIBFUzmhkLjPPi70z1+relFU6WDLkXHY7JQct587X2isZABoqOKkwktCwhcAtFZqwHuy9QjMx9jhhF2qXozx//0e5fIYRaT/Sw1ED7QfAQCYjBIL+dqOlFNyscpCVUFRyeBj4V+jmsGMxDlTctzuPU8TXdedFAwSrlRxykv4AoC5snOeOZt7+OLYzgRGdFFwF81xVKIBACCpgmOLz1uPMJZS99hDy00B6vJKL3Ybg81PyXH7C+N2Gim5ueyjKk55CV8A0FqpyYrDruu0HmF2CrQc+bhPb8C+7z9oPUIrj7nOx/ldcmfUZdd1P209CgBAFiUqY95GG0ZGVrg/vh3wFcSC4E3B32TOb2Zi3F5yF/+FcTs1xfn2quCvVAEoMeELAJqKm+ti/fi3HoHpGzs1PUblCq1HaOVRkyexu63U5N+BUo8AAKmVCF/YbVpOySC+qhf1qH7BV4+tPtT3/UXBcfuhcTuVlZzXfB/tekhK+AKADErtFnkp1cycxPn8YuSXlDV8caT1CCMrOfB9E708AQDIp8QibYkxEH8otaj+0WJVVaWDLsIX0/GUuZ2SAYk3KqZQUclNoao4JSd8AUAGpXaMHKh+wcyMPbmwV8uRNa1HmIIoffup4FO1iw4AIJmu605Hbtu4JnxRQASaS/y9Vv5mdcVcw8eCv/TIhqv5iaqVxu1MWoR8SrXP+qTtWX7CFwBkUPKG4a1UMzMydhhhzMknrUeYgpKBvKHvsDKmAAC5lBhTjBJi514lA/jCF/WpfsEuSo6rj4zbqaDkfKaqFxMgfAFAc7FrviSpZiYvccuREv/WmtYjjCp2B7wveFTfOmcBAHKIKgrHBZ6MhY9ySrXyE5hpoGCVzDWtH2coqlaWHLefGbdTWKlg2E2FdRRGIHwBQBalSxGaHGHqUrYcWdN6hAk5LzwBKPAHAJBDid3NN7EwyMhiMfSo0HG1WNVOyfeL8MV8laxOcWDcTimFW474LJsI4QsAsih98/Amer3CVGVuOVLy3/S+ZVR9338pvFvxuOu6ku1NAAD4gbgfK1H1Qrn6ckoupFuwaqfksT9UwWCeYtz+ruCLG8btNvtQgpYjCF8AkEbpUoSD3wQwmKIJtBxZKzEI0HqEEoZz9abgkT2P9y0AAJXF+KFU1Qu7pcspFb641nKkqdLBl+dbjzAXF6WrVhq3U0DJz7IvW4+SkvAFACnEQLjGTgQBDKYodcuRtb7vPxda0PaeZVRx/itjCgAwM7GQ9iHux8ZmXFJWqQUrVS8airHXdcFnIHwxU3HulKwqeaCSAGMq3D7LHNOECF8AkEmt8p2/KQnPxEyh5UjJf9skJ9+z8y6V2LX4aesb43nRdZ0exAAAdV0UWvgYAuxXW48yiliwKtUj39+tvZJzEMZcMxbj9pLhnVfG7YxI+yy+Er4AII0onVVyIWzTL13XfVBejuwm1HJkrUQSe+jjajcL99n3vCgdxFPGFACgkq7rhrHIqwK/7VYgvLhi4z2hmRRK/g3MFcxf8XH71iOwm1LhixstR6ZF+AKAbGpVv1jFgvZni7okN4mWI2tajzAlcb6+L/iUDytMFAEALF7B4MXgtOQYiq9KzcvU2uDDAwoHYA6icgp57bUhIc6fouP2rutqzkczX9pn8ZXwBQCpVLihvmtYGPvPcJNtdzJJjR06qHHDXuJ3jB1CgbWz2M1YylshPwCAMoZx/FDVsmDw4n3f9xY9yiu1YKXqRR4lW0cIX+Q2xnj4vMK43XnEzrTPYpPwBQAZlb6hvs/bqIKhzx9pxI378cjPp8bE4cXWI/vTeoQiYhdj6V0uypgCAIwsxgefC7RpXLvu+14FvjpKjfU+bz1CKyUXD83lzVy0XCgx17TJuJ19lJyzFL6YGOELANKJG+oW5d6GdOq/u667knYmiUm1HFmL93CJXS0mPimi7/uLQu1y1o66rtN+BABgBFHtYpgz+E/BXabXFnTriCqkB4V+mQWrPEoGYczhLUDf9+eFx+3Hxu3soVT44lrrs+kRvgAgpVgIa9Wbc6g08N+hZ6wQBo1NseXIWokdA1qPUFLpcM+5zxQAgP10XXcai7hvCx7KoRLnS4sd1ZRasLr1N0zlS8EnY5y1HDXG7dpSs4tSgU0VnCZI+AKAzE4btB/Z9EoIg1binDsa8dcPE081SyiWCHpoPUIxfd8Pu+I+FvwVBxXKpAIAzNIQuui6bli8/a1gtYtVzEGcRDU/6tByZAFivFWKeYKFqDRu136EXfgs40/CFwCkFZMdGXa6C2HQwtjnfs2qF1qPMFVnhUN/L7quU8EFAOARhuB113UXXdf9XiF0sYrxy/O+7y101FVqnkXLkXxKzBGsCratIaca43Ztp3i0wu2z3JNMkPAFAKlFovnnJM9xHcK4chNOBVNuObKm9QiTEqGh0tUpLpUxBQC43zDWjsDFcF/2n9Vq9abSwuq1ihfNlNotrOVIPsX+JjZLLYdxOwkVq75TuGoQhQhfAJBe3/fDDfX7RM/zeLVa/XuYDIrSp27GGVWhliMtwhelWo8IYFBM3/fnq9XqpuCvGBYPzrceBQBYkGHME0GLswhbfO66rh/G2hG4KF3lYtOvfd8PFS8s1rdRak7FbuF8Si4iCl8sSIVx+6FxO09Q6vpT8hynoL85uABMQd/3Q8hhFdUnsjiM0qfDRNGwyHyhPCkjmXTLkbVhN0LXdZ8isDSml61eE4txGhP/pbwZPjfsYAAAklq3+hjbTyOHzPc1lK0/bRRU5y+lzglVTPIRcGJMNcbtl+Z6eYRS4QufYxMlfAHAZCQNYKxiF/PwnF51XXcdpe8+2DXDHubQcmTtslD4AooZQhFd130cer0W/DUXJUtTAgDsIVNAopSPEbwwbp8pLWRSKrmIfVK4sgbJVBq3Xxq38wilzhHBn4nSdgSASRkCGMlakNx1FNUwhh3/Q39AN+g8yYxajqyV+N0HWo9QwWnshizlqOs6ZUwBAOoaSnj/s+/7l4IX7Q2tZwo9CaXaYRnOKozbz7YehW+Vap/lPmWihC8AmJwIYPya/Hmvq2H8p+u6IYk9diUD5msWLUfWYkLz49Y39id8QVFx7pYOR5xF4AoAgLKGxbl3w+5UbUYWQdWLnOziZlRR4eai8FE9N27nB0qdH66ZEyV8AcAk9X0/pI5fT+S5Dy0Xfuu6bqiGMdywl0rDMg9zajlS8jkIX1Bc3/fDJM51wd9zEGVMAQAoYx26eNb3/blqF+mYH1mQwu8/59JCDdf2CuP20gEPpu2w0LN3zzJRwhcATFbf98OC1d8Ll5cb03Aj9jZaklxITXPXDFuOrGk9wpSVLjF6rDoSAMDormPDhtBFbvrkMxZtf5et9Lj9hTko4LGELwCYtL7vP0dpr08Teh1DYvrNarX6b9d1l0IYbBh7sJiinK7WI0xZ3/dXFVpdXaiKBAAwipthk0bf90N7kUuhi8Xyd8+rZIUCFirG7e8Lv/pL43buKjyvL0g4UcIXAEzeMJnS9/3JarX6eYKv5ZUQBhvGDhNk6mWs9QhTdl64ypIypgAA4ziMBbILu5QhJcEYSjmrMG4/33qUpSs2ny9AOl1/W/oBAGA+ht78XdddRf/8MVs31DCEMF4OE0TDApybq+Xpuu75yD0Cs7Qc+WrYdRbn98HWN3f3tfVIptfJPA3X5GgN8q+CL/DVEMSLHTsAAOzuKL7edF13G0HwD8YNAPMV4/YhgPFbwRc5fK58MG6HcXRdN8dA06XwBQCzEm1InsfN9vnIC72lDc/17ZDUHp7/sFjt7FyU05FfbMaJxQ8RNBrTadLXyswMk/Vd1w0tro4LvrIhpPRcAA8AYDQHMQYZgq43sVnDhoc8Tgo9E6XaYYFi489p4XH7sLHo+dajwC7ezvCoXWk7AsAsDVUw4kb44wRf3zA59NtQxSOqIbAMc245slbiOb3Qc5OKTguXMT2MUqkAAJS51xom+b9EWxKtP+dLuAaWa+zNTXcdNdqtf7P1CJCS8AUAs9X3/Ze+74cF7X+sVqvrCb7OIaX9n5gUsrg8Y3NvObIWz6nEwrVezlQxfK7ELpeS3greAQAUNWx4eDNURxgW0Iy3AeYjxu3vCr+gtw0CfF+2HgFSEr4AYPaGPnx93w8LWa8nmhJeTwpZjJuvsVP5mVvWlAiFCF9QTd/35xUCfaUDHgAA/NX680uUqQdgBmLcXnoOWLto4F7CFwAsxtD3r+/7ZxMNYRxGFYwWZe0ob+zwwNLCF1qPUFvp1iDHXddpPwIAUMdm60+tSADmoXSo7lhwD7iP8AUAizPxEMbbmBCy0DwTBVqO3PR9/3nr0SSi9UiJ953qF1QzVFRarVa/Fv59SmADANR1HFUnLaYBTFyM298XfhVaRQNbhC8AWKyNEMY/V6vVpwkdh+Moi6oNyTyMPbFXorLE2LQeYQ6GSkS3BV/HgTKmAADVratgXFpQA5i8swrjdm1DgW8IXwCweMNO/L7vT1ar1d8rJKLHMtzcX9mRMwtLajmyVuI5aj1CVX3f/16hjOlwXp9sPQoAUNY/+r7vxvqKsfY/Nr7exdf72AhRcmFsV69izG2MATBRMW4v3dLzlXE7sEn4AgDC0Kqh7/thIe1/r1arnyfQkmS9I0cAY6KW1nJkLZ6j1iNMXrTRKV05SfULAGDSYqx9tfF1Hl+nw0aIvu9/inH4OpjxMUkg40jVycl6tvQDkFipQNOXrUcgKh9XGLerfgH8SfgCAO4YUtF9319ES5J1NYyMO3HWBDCma4ktR9a0HmEuTgt/Rhx2XXe+9SgAwIzEOHwdzHgZgYy/x8aI64avdF11UgBjWoQv8joq9MyEL3hI6XnTI+N2YE34AgAesK6GERM/r2MHTkYCGNM09t9sSjvktR5hFvq+/1Jhl8tZ13UmkAGARYnx+LAxYgg+/E/DCpUCGOVczfWFAXnEuP1d4Sdk3M6o3HdMl/AFADzSUKZu2IETkz7vErYlEcCYkK7rXsYk3lgm0XJkrWDrEe8Bqht2aBbekXmg/QgAsGTDwtlGhcp/VCghf5cABsCExbi95FzugfYji/R7wRdtg9lE/e3/+L/+O6RLu6UfCAB4rEhLDzfs5xF2GL6OkxzAIYAxlGudUvuJpRq7RcYU/+bDYvLbrUf3c2qwSyNnq9Xq3wV/9fEQ2nJ9BwCWbmhPslqtTrquO4mxea3x+NdA7PB7hzYpW98lE7vPEyocXprMZhSaOi08bn8RnxGq+izEsLms6yyx8y2VLwBgD1EN4yR23mRpSXJpN84kjB2+mOKu+BLP+UiZR1qIyZVfC//qC611AAD+MNx/bYzHS1Yh23Q00eD70hgT5lRyLCMQxQ/FuP194SOlaiVjMb8/UcIXADCCmPRZtyQpfRP/I+vdOBboklp6y5G1qCJTYpJ07GALPNaw8/K24NE6jAobAACEGI8/r9DPf22oSHa+9Si7KDWONR+Sk1AMGZyVHrf7jFicUueTz7KJEr4AgBFFH9rTCGG0rIRxFIuA5KTlyF9K7Ag43XoEKojy06XPv7equwAAbIt+/n8v3NN/7W20PWE/paoVHG09QgbFxjHaPPBYMW4vvanhzLh9UUoFCVW+mKi/Lf0AAEAJsaP/ZYMetJvedF33wQA0JS1H/jIER37ZenQ/X1uPxPsQqur7/kPXdZ8KX/eH9/yYk/1K9AIAsxC914fFiqsKC/CXdvLnNVQDjUVW8vB+IYWhjXTXdacFx+1DtdsLlVnZ0xIqX9SqWvY9JyWuA8IXAFBQBB9Ouq47ixDGmK0mHmMYTDw34ZBHgZYjg/90Xbf14MK9jIEutHAaOx9KXfOHUtcvh6DH1nd2MzzXF84UAGAOhvFvbIQYxgOvCr6kr6Xlo+IGOxjmTAqOZdchHPIoFb4o0c6U+RvG7f8t+CpfDJ9FNsUtwlWhIE+LzZxVtb6HihZBox9nbUcAoIK+7y9ikFm7FclhhVJ6PI3Uex1aj9BMVF0pHf65GHbzbT0KAMDXAEa0BH1f+GgoLZ+Xv0s+pUro23DEk8W4vfSu+zEr1ZZqbUFi5n2mSfgCACqJyZ9h4f31arW6rXjcz9yopSJ8UceRSVBaivR+yR1YwnUAAD8QAYyS92QHUeWS3X0qdOyMBxOJealSlQFVFmAnMW6/KXj0DmNn/RiEjPIqeQ0qFVqjIOELAKhs6CsY/cRqlUU8sECXQ6GWI3yfoAutlb722mkJAPBjJ4UX1165J0vpZOkHIJmSC4gWpdlH6cqpxu3zV/Ia5LNsgoQvAKCBvu8/Vw5gqH6RgzBAXUJHNBW9XX8t+BwOKrQ3AQCYtKEKZY3Fta1HeKxSO4btFs6l5N9DOwZ2FuP2ki2qVEiauZjnL8Vn2QQJXwBAI9GG5HmFHrSruNEvPdnEAyL8InxR11De0SCF1s4Lt5p60XWdnRAAAA+oEIo9teFhZ18K/bsHdpunInxBZmeFx+2vjNtnr9QGS/OaEyR8AQCNRQ/aGgEMO3Ha0nKkDaEjmqq00/Jy6xGAZTKpDTykZCj2QNh+Z6XCFyuLVqmU+oy+jTEX7CzOodLzpqpWzlupz7JDQcLpEb4AgAQigFG6BYkqAG2ZiGvDcae5vu8/rFarTwWfx3B9F7ADpqbkdZHHKTE2uNl6BJKosLhm7LGDqEpSilBeAlEV5rDQM1H1glH0fX9Z+P70qOs6G4Tmq+S1yGfZxAhfAEAeJxUmK93kNxATDS8W98JzEDoii9PCZUzP9yh1bacYwDKVaJFQcgc77C0W10qNu19oPbKzUn8TY8EcSi4clgzvsDyl500vfE7MliAhfxK+AIAkYhdO6Z0yduK04bi3JXREc33ffylcZvQgSmnvwm4xAGBJSrZsM/bbTan70WMLnSmUXDg0lmE0MW5/V/CIHuxRgUnANTeVL/iT8AUAJNL3/efCN/n6xLVhAq4tx58U+r4/L9xi6o1rPLBwdjgDj1EyfGGBZDcWreZN+ILJiHF7ycrEb3cctwtfJBabKkvN96jqOzHCFwCQTIWbfBMPFWk5koJBCpmU7DO+KryYADCmEosldjc/TYlxgfLvpBc7mz8Wep7G27tRrn2mYk7kqNCru4n3M4ytePuRrUeYA59lfCV8AQA57Vo6/jHcrNWl6kIOWo+QQt/3w2D814LPZSit7DoPTMHvBZ6j8AXwWKUWSFSb3EHcI5diTN5WyeMv8EcRcU16X/DovjBun6WS1yTzmhMifAEACfV9f1mw+oUKAHWZ6MnB34FMhoDdbcHnYxcNsFSldtbOVYlxgR3ITEXJBRLhi918KvTvqoTYlvAFU3VWeNxecuMdbZS8Jh0Jd06H8AUA5FVq8cykdCVajqRiwo00ohdoyV0Lw6DcrggguyI92uP+i8c5KHCchC+YhL7vi1yDgt3Muyn5N3Fv3E7JORHhC4qJcXvJtqHHxu3zEufMdcEXVbqNLSMRvgCAvIr17bcIXY1qC7kYpJBG3/cfCu7uG5w/dgGycJlngO8p0XZkpcrb4xQcD5T6u0IJpe7FhMB286Hgv21s3kDXdSWP+3Xf9wJ/FBWViYuO27ce+T73WNOgjRarvzkEAJDTkJbtum64wT8u8ARNBtVR4qb40wJ2d5wUOu8NUsjmNHb4ldh5fBiBI6VMgaxKLZgox/s4RcYDhasJwNi+FBp3CIHtYAgEd11X6p//WgnRNaq6krv6BcipZTiP/1vodw3XprO+739Y/Xi4fhW8RjKeIbDzptDxHM6Xl7GZh8SELwAgt6uCk0EGqgUVbDlyMfeb7NiJ+Z+tb+zvwCCFTIadWl3XDeGIXwo9rbOu6y6i9CVAxmvg1uMjEL54nBJtEW62HoHc7JrP52PBNhWnqiHWU6ENq3E9VcQ967vVavW20O8bqlZeGrfPQ4RkbmJDTAlnrn/5aTsCALmVCkiofFFeiSoLt0sIDsRupFKT96pfkErscCnVE/RA5QsguRLXvxKhgjkqEVKxkA1/MN7eXcnxbskqDGwrOfa+1TqRmvq+Py84T3UgGDY7Ja9Px13XCZsnJ3wB/L/t3e1x1Vi2BuCjqf5vOgIzEcDcBHBHgCcCTAC3cEeAiaBNTQCNIxgTQeMEbuMIBkcwOALdEr0EwsdfWFrSlvQ8VS5mDNU+Ph/a2nu/ey2gbEpizlfGxGlNyeas31X4ghJlLgS/MjEHCpZxws81734y2iLYCGNust6zT7a+w31lXkeaSogCGOPJ3Ex26pspZF4/Ds3bF+XONjI9OWRTOOELAChYlJy7THiETuIkiglTxoLbmhYY3m19ZxhfWo+M/cvAbaLay9tb/klf95mYZ1XfALhNxibbrsXr20Up+Ix7VZUvgF6a8v7J96XCFyOoqmovOYQkfMHootpK1rz9vlUrM9aIGVhyRd/GC/OdsglfAED5MqpfZJx04xstR3rSeoQVyixjep+Juf6ywBSyNuvd694u6/kRvgCGkBXE30S5du2p8mWGXC7WtDZCcY4SAxD3mberkDwf2dcp1S8KJnwBADC8jIWGNS4uaD3CakSlo8zSvNllLwEeImuz3sba7VKeH/33gYFkhi82ql/kis3jF4k/RPCCycS8PfMaYkN9ObLXYFS/KJjwBQDAgLQcGZTWI6xKnOB6n/Q7P3fKDyhN4ma9693tMp4f7auYI1VyChSbm1n3xBsbVumyN4+FyplUzNvPkh6D69NCRButrPdJKzusyAMJXwBA+ZSUmxctRwai9QgrdZhYxvS2hVCl4oGpZGzaP6mq6tHWd9nE8/Is4ZlQ9YI5yrpOZG+2rEH2htJt98U80AhVL85iQxOmdpA4bxcwWo7ssUwrrUIJXwBA+TISzwIdebQcGVbWRGXfpgwlisXErMXg2ybmFjGBqWTdlwpaXu+mcaAv4QvmyHygUHH4ICuIv3G6PE12qMUpb4oQ8/askMRtVSvdb81IXdfvkseyxjvrm+URvgCA8mXcQH3e+g69aTmSIq31iE0ZSlXX9XFi+Xan/IDSZC0iG+evl/W82AxgjrQdKVv2RruN/AGNUPXiMjYyoQh1XR+Zt3MP2detXe+X8ghfAAAMR8uRgcVpgqzJrE0ZSpZRRWdzR/ULgClkbdo/dwrsWhn3P+d1XQt3M0dZlQ+EkYahXPu8ZLdK0IqBEh0mPSbXp+U4TmxR03rl/VIW4QsAKJ/KF/Oh5UiOrEU3mzIUq67rpgz/26THd92pCG1HgElE0DKrHK+gZUdVVQdR/WtoNpqZnZgH7CY9bvPtAcT4cJL8Y1RSGEBs+j1P/BGXwheUqK7rDyPP25mZCCiPcf3SfqQgwhcAUL6MNhZZvbVXS8uRVJnPgU0ZSnaUtCF53Ska4QtgSlmb91lVhOYq677H/SpzlHlC1Hx7ONmbj7tVVdng7C97Y/FUhSUKdpRU2eC6ebvA6xC8KK0AABWbSURBVDyNUf1iV6CwHMIXAFCwqqqyetDaZBue/tlJtB5hrWKBMauMqUVmoCRZ9zvPIiC7evE8ZJxKvoxTnzA3mfMA4YuBxFzwLPnHvDZWPFyEVzIOonSZu1CsmLdnBX699xdgxOoXTYXfrDUkfoDwBQCULSV8EQsYDCvj5va90x1faT3CKtV13Zwmfp/wu193igZgKpmVEyxa/yVrIVbVC+YqK3xxYQ43uDGu465lDxAHhl4n/5gTa1iULubtGUExQeLlGKP6ReO3qqocNJuY8AUAlC1jYyz71MjqxIJDRr9gC0DfaD3Cmh0mTdK/LmQ7tQxMKTYqs+5R99cetIzfP+tEpvtVZic2JXaSHrd7qoHFfWr2OsYT7UceJLvE/WVieBCGdpA9b1fJeL5GrH7ReJdYTZt7EL4AgLJlbAorgTo8i9nJtB5hzeL9n7EY7BQNUJKs+54dGzdffv+MjebLOOkJc5M1f9sIX6TJfM1ar1WGu7+qqo5HaDdyrJIMcxHz9ozN9RftvF0VmHmr67pZ17kY4Zdo7vs/CGBMR/gCAAqVeBpH+GJ4GZv3Wo5s03qE1arr+jgpgOSEH1CKzE38w7WO9fF7azkCITawnic+H8IXCWLD8WSEH3Vqbni3WK96lfxjLkY8JQ6DiM1183ZuM0aYcNMJYBjTJiB8AQDlyroZsxg0IC1HRqX1CGuXMS686FS/0JYKmExsrL1P+vk7K160Pk5sr2BTjDnKvBacO5Wc6miEfvk71kxuF2sg2e1GGkcOpDBTGaHX7rx9jMoJJIlWWllznquaMe2jChjjE74AgAIlnsaxGDQ8LUdGktx6ZO3lyJmBuq6bykVvEx6pUzRAKTLvf16tbeExft8XW38xjLMYl2A2oqVE1mdiM9KG9GollvS/6klVVV7La8QJ6tPEUF+rGWO8BsxSbK5nzNvb9UfruvN3MEKYsLWrBcn4hC8AoExZG2FOcAxPy5FxZS3APOmcIoCSZfQI3VeKEihBbLRkLkSurVJD5saVTTHmKPsaIECfLLGk/1UvBDC+F/OFD0mVP68aqyw/ZMmo1LPaNnpLE2u+Y17n2hYke1t/QwrhCwAoTPJpHIsHA9JyZBJaj7BqMUkfulLLTvw3nWAGSpB5v/qsqqpVVLuqqqpZ9H+y9RfDuHAimbmpquo48TOxiQC908jjGOs63gQwhAC+D15kfoZab3yWmLukzfWd+G/6fCxAXdenI7Yf2cT75w/j2jiELwCgPFmncS6UBh6cliMjS+4HbwLCLCRN0pv3v+ovQAmyT6b/tvSyuxHmfr31F8NZWwURZi42Gl4l/xY+FyNJLOl/nd/XvlE1cvDiPKqbwOzFvP1s4N+jCZ+pfrEcY7YfaTXj2jtVVHIJXwBAQZJP41gMGp6WI9PICqdoPcKcHA48SW+q+Dzf+i7AyCJoeZL8U0+XuuAYwZLMIO+lanrMSXwmsufCZxEIYDwZrfhu8ntUE1qdkYMXlw5EsEBDb66bty9IrP9OUYX3RbQhWXQgfUrCFwAUodnwXHvicoTTOBZJB6TlyKS0HmH1YnPSqTBgqbLvW3djM2lRYj71LsoKZzkSFGYuYs72IfkzsXFPNr4JNqxeNyeFt767YCMHLxqHqrWyNDFvdxiOG0V489eb/j5Rc23/c63hwmzCFwCUohnoP1ZVtcqNz1gU+n3rL4ZzYpF0cFqOTCTey1qPsHp1XTeLOOdrfx6A5YlFyKHLNF/1ZEkbaSNtkl3E2APFGzF4oerFRGKjfswNqxdVVX1Yw8Gh+Px8GjF40axZOTDEIkUrHfN2bhT319mV/27ShAs/RttCBiJ8AUAp9uME2r9jMruasledRaFMUqzD03JkWlqPwF8EhoClGuP69mIJAYwRTycfbn0HChRVJf8cIXixMdeeVmxYZQXzr/MsDg4tds0qPj9jBJda58YXVsB7nLscThjSaeYQfzTzImuiwxC+AGByUe2iO6l7FmWvFj/gj7QodBJl7hhIpIG1HJmW1iPw7cTfW88FsDRx/zrGCbAmgHE615PMnSB3dvCiOd3vXpWiNZ/jCFRlVpXseqvqRREORt6w2o01q0Vtpsbn5zQ+P2MFLy6b+bdDKCxdjBXm7dworoN7E1dJebHZbP5TVdXx2tvD9yV8AUAJbipr1Q7475Z4qqC5kRlhUejSSZwUWo5MTOsR+E5znb/wlAALdBj3s9meNwGGuQW/IxA8RvDi0v0RpYtDHR9jHWEM5tqFiLnhwUjjRddvUbl19oeGOp+f51t/mWvPYSFW5GiC6xQzEuPZfgHvk1ebzea/KmE8nPAFACW465T5izhV8CEmhLPWBEmaXmpxI5Pt2EQ2hZYjZdB6BL5N0JUxBRYnrm9jbW4+iVLys5hvRJD7j7HaKphTUKqYXzchpH8nVSe8idP6BYlqcFNcv5/FoaGjOZ4Sbua9Ue1i7M9P42W8brAKnaAY3CjuufcKCeq0B2NPl7AnMybhCwAmFRUt7jvBaya1/66q6lOUv5rbybS2BOqfI5xOa1zUde0kzsCuaZMzFFUvflzmc2Yjm1mJUvBj9rsGGEX08x+r/O5OzDeKbUPSVLto5kMjBbk30W7keOu7MLH4LLTz62cjPxrtRgoUr8nLiR7Z6wjwzWJjNdanmvWi/0xQ7WITwYt3W9+FhYt5+5nXmdtEMK2UAMYmxonunswiKpTHmJ0ybgtfADC1hwxwu7HY2CQvm8ntYclBjDhJ0CxYfhqxBOpGmjpNVtJX+OIHJbcekehmjsYqzw8wtrHLyTcLjJ9K6ucfc4oPUe1irNPJ2o1QlNgwPohKkn+MPL9undd1LahdqNjQnyqA0Vybf4/NqSKvnVfWp15v/YNxvBW8YOWmaJPEzHQCGGOF0O+j3ZP5sxPEuKmdfJGaQ5XxuD9HO/iUeZXwBQBT67vB2VSQ+K0TxChm0I/B/DROErwaqSRwy0mcPFqOlCUrtLK7lCQ36xHlKVU8AhYnFh/Hvr7tRD//TxH2nqQSRpzu/xBzirFP9x9oN8LUOoGL5r7/v7FQPkYlyetcxkYIBYuN/ZMJH2EbwvhcStXWidenuk6El1i7uLdSVYw7FRrAaLVBjD9ivDuNOVNR90kxlzqKx/c52mylj4M/bX0HAEYSE9Ah04VP4utVVVWbKOPWLFQ2NyofsxcO4/fZi6+s1hT34SROEi1HinQaC7AZDrQfYW6a0vBx0m6qTQmAFHF925ugPPpuhL2PYuPqNEpGp4kA6H7ci4zdg7/1Jvv3hOvEvPppZ25dyj3Nl+CF0Pw81HV9EOtCU1RHae3EBk+zRtVsnL2LMWSUUFusX+xPvD7V9dZaFfylaRMdn1Hzdm7V3HfEHOjdRG2i7mMnHtuXxxfj73nsyXyKPz9nHRSNudOjuH98FPePQ+87/RDhCwCmlF3W/1n3dFhVVZdtEKMZ8COYsYlgxr0XUOLUW3dQb78mG9A7nMTJpeVIYWIS8j5pArIvfMFMHUT/c4ClOYh7+CkWqndiE+9FzCtO26B3nEp7sFgw7G42Tz2vaE4mq6S0bscRNtp05s2f+77XW5059Sbe8925dQmbxFe1wYtBfn/GEQGMKdtrdLVVW5uKShfxuRpkDNl8/5lqx5GxKyXd5aVWI7DlMFpowa1i32I/2ka9uu3fFuTJ1TlbhDI2Ecxo92I+x17NXdq9mNak4Yq7CF8AMKWxe2DuXAlkfJ2Adwb/yxsG/EczSCM7iZNPy5EyZaW/v7QescjK3DTv2aqq3s5oUg5wLxG6bAMYU27Qfg1ibL7NJc6uLB5et5C4d83/Lm2DrKmiN/Y8jfJ0F8yvmzd3dRfQb1Pae/2+BC9mLE6Xf0qslvgQu9eMIeedcaP9PH285rPVHUe6h4JKDC21BC/gGk0VAPN2fkRTPahpux5ta0q+7t/l6h5LqRU9Hkz4AoBJRCnREsMMOzNeFDqwIJRHy5FyNSWx4wRqxuuj9QhzdRSBsWJPAgA8RATM9goIYFzVziHmvHh4rooeD7DkkumCFwvQbPxHwKHkzar2czTX9ajr+PzA3Y5i3WnOG+mMKMa0j3EQTduaQv1t7U8AAJPJbjmyNi/1ZE6n5UjZsp5H1ypmKSrqCA4BixQbOaozDOtcFT34jo3jBYnKC3vxupKvGVNUkYQ7xH2Xe1p+SFxbmzHtrWeuTMIXAEzFiarhKOE4Di1HypYVvtiNPuwwOxHKe++VA5YornEvvbiDELyA79k4XqB4PR9HmyjynMSY8slzDHeLe1rXJX5Ic9/etCHZbDa/bDabC89eWYQvABhdVVWPltjLawLNiY1/CF7kS2w58mHrOzxITFazTjE5hcCcHTrhByxV3Af/4jrXy0ld108FL+ArG8cLFptVTgvnuIzDQQfGFPhhB+5neYi6rpu15afGtbIIXwAwBWX8+ztXAnVUWo7MQ9bzKXzBbMXGwZFXEFiqWHBUSv5h3jSbZHN84JCguYb808bxOnROCxs7hnEW1WIcDoIHiHn7seeOh+hUwfiHKiplEL4AYArCF/28F7wYT1RqeZHwA8+dphpcVvhiJ6qfwCzVdX0coT2AReqUknetu592k1k4D/7SVLt4HNX0WIkI7z3Wpq+XZjz5takmYn0D+on7MveyPFgzJ4rqTi+1IpmW8AUAUzAhe5h2UrvvJM6osjbdnQgZWHLrEeEL5s7JZmDR4sSXkrt3a08n22SGvz4Pv6h2sV4xduzrmf8g7XjitD4M59BzSV9NFaK6rptw4RsVnqYhfAHA6DrlHaV578+kdjpajsxL1vMqfMGsxanwN15FYOlirvFPC41bnE6Gby6i+steVD9g5To9821U3e0iQkvGExhYXIsEiRlEVFMRwhjPeVQd+Sh8AcAkmpvJOJmmDNbtmhujlya104iWI88TfriWI3m0HoGbHRtzgTWIqg5KyX/zXpAbvmgrXWgxwpaognEUIYyTrX/ARaxPPRZaglRHNsoZSju21XX9yD5MiiZw8etms/l7s9cVVUc+C18AMKlOGayXKmF85zJSqc2kVnuK6Wg5MjNaj8DNopy29iPAKlwpJb/WecZ5bDTvC/6yYpexkf4PlS64j+Z62bSiaTZShDC+6IYurGVAMvN2snT2YX4xvvVydiVwcXx1riV8AUARYvB/avD/sjD0Nk6mHek7OzktR+ZJ6xG4QWw4OAkOrMZKK+61G2VPbTSzYu/jc/Co2UiPFmxwb0IYf5VPF7qA8cXBIvN2UsT8qBnffo4QgQOxt7uI+4CmteXPEebdClx0CV8AUJQVD/4XnUoXh7cN3oxDy5FZ03oEbnegjCmwNlcq7i01hNGcwvqnjTJW6vLKwvi+zwFD6IQwfo51m6UH+U6iatJTnyGY1KF5O5miUuBxBNX/Lojx1UUb4o3qFo8jyHt634OywhcAFGlFg//7zgKpShdl0XJkpuKEQNaCmPAFsxdjzZFXElijK+V2l3CisK2c9/c4haXCGmtxGZ/hX6OlyKMfXRiHH9Hpm/84Qj4nC9oYPY9Npp/jc6RqEkwsDm6ZtzOKCBq2ezE/x5hwspLKgWcxn+qGLfZj3vigA5Q/bX0HAAoTg9xx8xXVCJrNz7342p3h6/U+TuZbFCqbliPz1jzPrxJ+A+ELFqGZVEcll2deUWCNYmPpQ8wvDuLryUyeisvOfMK9Jeczeu8+VLPw36wLNJ/bpn3IR9UEmVJce09jDNmLeWLztTOjF+Z9fKZOfZ6gTDFvn9M9KgsQ+xXv2gOEVVU9jrHuaXzNdR3psr2P7NxPprSlq+q63vomLMGT//mXNzdDe3P+f/8rbVqYqqraQb+9ASjxZvQ8JrQfLI7OR1VVexkP1gmSccQi2NOkH/ZRcOphEl6XTxYKHy4m0I+H/u+6zq1D4nXWNZbJXAl6l7aJdtaZU7jOsqVzXe5en9v/3/7vkjeGz+LPZhH8c/un9ztzEusI7Vdpm1Nf16ZiLHG/xbXM28ti3k6JOnsyjzt/lrIvc9a5l/wUX6OuMwhfsFjCFyQQvpiBzgTh6g3AWItMZ51B3cIoAADM1ISnvM6vnMgyp2BQN2ysdYMaV932dzdp58VXdd/PNuRYtAhjdNenxh5HrE0BMJor95jd+8frDjneZ0w82/rO9/eSbWj3c1YVi4cQvmCxhC9IIHwxc51KBu2f1yWHrw76bTmqrs+d77ULShaNAABg4ToLit25xNXFxEfXnPy6uGYjul04NKcAWInOKfbbxpHH17TZNY4AwAz85EUCYC06SX+JfwAA4IdFuVrzCQAeJMIRAhIAsFB/88ICAAAAAAAAADyc8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPQhfAAAAAAAAAAD0IHwBAAAAAAAAANCD8AUAAAAAAAAAQA/CFwAAAAAAAAAAPfzkyWPB3nhxGdgHTygAAAAAAADwnc1m8//3Z77sIq6/uQAAAABJRU5ErkJggg==";
+document.getElementById("logo-img").src = LOGO_SRC;
+
+// =============================================================
+// DATA GRADUAN SEBENAR — Sijil Teknologi Elektrik KK Santubong
+// Kohort 2024 (27 orang) & Kohort 2025 (28 orang)
+// Sumber: Templat KPI 1 2024 & Templat KPI 1 2026
+// =============================================================
+const graduanData = [
+  // ===== KOHORT 2024 =====
+  {nama:"Luqman Hakim bin Zainal",        tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Jurutera Elektrik Borneo Sdn Bhd",jawatan:"Juruteknik Elektrik",   gaji:1900,negeri:"Kuching"},
+  {nama:"Ramlah binti Daud",              tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"Awam",   majikan:"Jabatan Kerja Raya Sarawak",      jawatan:"Pembantu Teknik",        gaji:1800,negeri:"Kuching"},
+  {nama:"Mohd Faizal bin Ibrahim",        tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"GLC",    majikan:"Sarawak Energy Berhad (SEB)",     jawatan:"Juruteknik Elektrik",    gaji:2100,negeri:"Kuching"},
+  {nama:"Nuraini binti Sulaiman",         tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Green Energy Sarawak Sdn Bhd",    jawatan:"Teknisian Elektrik",     gaji:1850,negeri:"Kuching"},
+  {nama:"Azri Hakimi bin Roslan",         tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Jurutera Elektrik Borneo Sdn Bhd",jawatan:"Teknisian",              gaji:1950,negeri:"Santubong"},
+  {nama:"Farah Nabilah binti Hamzah",     tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Siemens Malaysia Sdn Bhd",        jawatan:"Pembantu Juruteknik",    gaji:1900,negeri:"Kuching"},
+  {nama:"Khairul Hisham bin Mohd",        tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"GLC",    majikan:"TNB Sarawak (SEB)",               jawatan:"Teknisian Elektrik",     gaji:2050,negeri:"Sibu"},
+  {nama:"Siti Zulaikha binti Zainal",     tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"Awam",   majikan:"Perbadanan Pembangunan Ekonomi",  jawatan:"Penolong Juruteknik",    gaji:1800,negeri:"Kuching"},
+  {nama:"Mohd Hazwan bin Hussain",        tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Bosch Rexroth Sarawak",           jawatan:"Teknisian Pengeluaran",  gaji:2000,negeri:"Kuching"},
+  {nama:"Nursyahira binti Mohd Noor",     tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Flextronics Sarawak",             jawatan:"Teknisian QC",           gaji:1950,negeri:"Kuching"},
+  {nama:"Iqbal Hafeez bin Ruslan",        tahun:2024,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Jurutera Elektrik Borneo Sdn Bhd",jawatan:"Juruteknik Baru",        gaji:1800,negeri:"Kota Samarahan"},
+  {nama:"Wan Suraya binti Wan Ahmad",     tahun:2024,jantina:"Perempuan",status:"Bekerja",             sektor:"GLC",    majikan:"Sarawak Energy Berhad (SEB)",     jawatan:"Pegawai Teknikal",       gaji:2200,negeri:"Kuching"},
+  {nama:"Hafizi bin Baharuddin",          tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Nurul Hidayah binti Zulkifli",   tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Mohd Amirul bin Bakar",          tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA Sarawak",jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Siti Aishah binti Salleh",       tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Irwan Syafiq bin Mohd Yusof",    tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Norsyazwani binti Idris",        tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Mukah",                 jawatan:"Pelajar",                gaji:0,   negeri:"Mukah"},
+  {nama:"Haris Fadzlan bin Mohd Ali",     tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA",        jawatan:"Pelajar",                gaji:0,   negeri:"Luar Sarawak"},
+  {nama:"Aireen binti Ramdan",            tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Mohd Zulkifli bin Hassan",       tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Faizura binti Hamdan",           tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA Sarawak",jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Mohd Irfan bin Zainal",          tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Mukah",                 jawatan:"Pelajar",                gaji:0,   negeri:"Mukah"},
+  {nama:"Siti Rohani binti Musa",         tahun:2024,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Ahmad Saufi bin Jamaludin",      tahun:2024,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Zuraidah binti Mohd Nor",        tahun:2024,jantina:"Perempuan",status:"Menunggu Penempatan", sektor:"—",      majikan:"—",                                jawatan:"—",                      gaji:0,   negeri:"Santubong"},
+  {nama:"Mohd Firdaus bin Sulaiman",      tahun:2024,jantina:"Lelaki",   status:"Tidak Bekerja",       sektor:"—",      majikan:"—",                                jawatan:"—",                      gaji:0,   negeri:"Serian"},
+  // ===== KOHORT 2025 =====
+  {nama:"Muhamad Azri bin Ramli",         tahun:2025,jantina:"Lelaki",   status:"Bekerja",             sektor:"GLC",    majikan:"Sarawak Energy Berhad (SEB)",     jawatan:"Juruteknik Elektrik",    gaji:2000,negeri:"Kuching"},
+  {nama:"Norsyafiqah binti Latif",        tahun:2025,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Jurutera Elektrik Borneo Sdn Bhd",jawatan:"Teknisian",              gaji:1900,negeri:"Kuching"},
+  {nama:"Khairul Anwar bin Abd Ghani",    tahun:2025,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Green Energy Sarawak Sdn Bhd",    jawatan:"Teknisian Elektrik",     gaji:1950,negeri:"Santubong"},
+  {nama:"Siti Nurdiana binti Hamid",      tahun:2025,jantina:"Perempuan",status:"Bekerja",             sektor:"Awam",   majikan:"Jabatan Kerja Raya Sarawak",      jawatan:"Pembantu Teknik",        gaji:1850,negeri:"Kuching"},
+  {nama:"Mohd Hafiz bin Yusuf",           tahun:2025,jantina:"Lelaki",   status:"Bekerja",             sektor:"GLC",    majikan:"TNB Sarawak (SEB)",               jawatan:"Teknisian Elektrik",     gaji:2100,negeri:"Sibu"},
+  {nama:"Aiyanah binti Zainuddin",        tahun:2025,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Bosch Rexroth Sarawak",           jawatan:"Teknisian Pengeluaran",  gaji:2000,negeri:"Kuching"},
+  {nama:"Mohd Luqman bin Osman",          tahun:2025,jantina:"Lelaki",   status:"Bekerja",             sektor:"Swasta", majikan:"Siemens Malaysia Sdn Bhd",        jawatan:"Pelatih Juruteknik",     gaji:1950,negeri:"Kuching"},
+  {nama:"Farahani binti Rashdan",         tahun:2025,jantina:"Perempuan",status:"Bekerja",             sektor:"Swasta", majikan:"Flextronics Sarawak",             jawatan:"Teknisian QC",           gaji:1900,negeri:"Kuching"},
+  {nama:"Irwan bin Supian",               tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Siti Mariam binti Marzuki",      tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Mohd Izwan bin Rusli",           tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA Sarawak",jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Nurul Ain binti Ismail",         tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Farhan Hafizi bin Fauzan",       tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Rashidah binti Mustafa",         tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA",        jawatan:"Pelajar",                gaji:0,   negeri:"Luar Sarawak"},
+  {nama:"Mohd Aizat bin Zulkifli",        tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Mukah",                 jawatan:"Pelajar",                gaji:0,   negeri:"Mukah"},
+  {nama:"Suria binti Abd Rahim",          tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Haikal bin Alias",               tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA Sarawak",jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Norsyahira binti Ghazali",       tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Ahmad Faizal bin Hamdan",        tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Hidayatul Husna binti Daud",     tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Mohd Nazri bin Jaafar",          tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA",        jawatan:"Pelajar",                gaji:0,   negeri:"Luar Sarawak"},
+  {nama:"Surina binti Sapian",            tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Malaysia Sarawak",      jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Mohd Ruzaini bin Ahmad",         tahun:2025,jantina:"Lelaki",   status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Mukah",                 jawatan:"Pelajar",                gaji:0,   negeri:"Mukah"},
+  {nama:"Nabilah Izzati binti Nasir",     tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Politeknik Kuching Sarawak",       jawatan:"Pelajar",                gaji:0,   negeri:"Kuching"},
+  {nama:"Sharifah Aisyah binti Syed",     tahun:2025,jantina:"Perempuan",status:"Belajar Lanjut",      sektor:"—",      majikan:"Universiti Teknologi MARA Sarawak",jawatan:"Pelajar",                gaji:0,   negeri:"Kota Samarahan"},
+  {nama:"Mohd Ikram bin Zakaria",         tahun:2025,jantina:"Lelaki",   status:"Meningkat Kemahiran", sektor:"—",      majikan:"Pusat GIAT MARA Kuching",          jawatan:"Pelatih",                gaji:0,   negeri:"Kuching"},
+  {nama:"Faridah binti Sahak",            tahun:2025,jantina:"Perempuan",status:"Meningkat Kemahiran", sektor:"—",      majikan:"Institut Latihan Perindustrian",   jawatan:"Pelatih",                gaji:0,   negeri:"Kuching"},
+  {nama:"Norsyazwani binti Ibrahim",      tahun:2025,jantina:"Perempuan",status:"Tidak Bekerja",       sektor:"—",      majikan:"—",                                jawatan:"—",                      gaji:0,   negeri:"Santubong"},
+];
+
+const KOORDINAT = {
+  "Kuching":[1.5533,110.3592],"Santubong":[1.7336,110.3134],
+  "Kota Samarahan":[1.4576,110.4573],"Serian":[1.1622,110.5751],
+  "Sibu":[2.3072,111.8167],"Mukah":[2.9064,112.0893],
+  "Luar Sarawak":[3.1390,101.6869],
+};
+const WARNA_STATUS = {
+  "Bekerja":"#006633","Belajar Lanjut":"#003087",
+  "Meningkat Kemahiran":"#7c3aed","Menunggu Penempatan":"#ea580c","Tidak Bekerja":"#dc2626",
+};
+
+// =============================================================
+// FUNGSI TAPIS
+// =============================================================
+function filterData(){
+  const t=document.getElementById("f-tahun").value;
+  const j=document.getElementById("f-jantina").value;
+  const s=document.getElementById("f-sektor").value;
+  return graduanData.filter(g=>
+    (t==="Semua"||String(g.tahun)===t)&&
+    (j==="Semua"||g.jantina===j)&&
+    (s==="Semua"||g.sektor===s)
+  );
+}
+
+// =============================================================
+// CARTA INSTANCES
+// =============================================================
+let cStatusTahun,cDonutStatus,cTrendKpi,cDonutSektor,cMajikan;
+function killChart(c){if(c)c.destroy();}
+
+// Carta 1 — Bar Kumpulan: Status per Tahun
+function renderStatusTahun(data){
+  killChart(cStatusTahun);
+  const statusList=["Bekerja","Belajar Lanjut","Meningkat Kemahiran","Menunggu Penempatan","Tidak Bekerja"];
+  const warna=["#006633","#003087","#7c3aed","#ea580c","#dc2626"];
+  const tahunList=[...new Set(data.map(g=>g.tahun))].sort();
+  const datasets=statusList.map((s,i)=>({
+    label:s,
+    data:tahunList.map(t=>data.filter(g=>g.tahun===t&&g.status===s).length),
+    backgroundColor:warna[i],borderRadius:4,
+  }));
+  cStatusTahun=new Chart(document.getElementById("c-status-tahun"),{
+    type:"bar",
+    data:{labels:tahunList.map(t=>"Kohort "+t),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{font:{size:11}}}},
+      scales:{x:{stacked:false},y:{beginAtZero:true,ticks:{stepSize:1}}}
+    }
+  });
+}
+
+// Carta 2 — Donut Status Keseluruhan
+function renderDonutStatus(data){
+  killChart(cDonutStatus);
+  const kira={};
+  data.forEach(g=>{kira[g.status]=(kira[g.status]||0)+1;});
+  const labels=Object.keys(kira);
+  const vals=Object.values(kira);
+  const warna=labels.map(l=>WARNA_STATUS[l]||"#94a3b8");
+  cDonutStatus=new Chart(document.getElementById("c-donut-status"),{
+    type:"doughnut",
+    data:{labels,datasets:[{data:vals,backgroundColor:warna,borderWidth:2,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"right",labels:{font:{size:11}}}},cutout:"60%"
+    }
+  });
+}
+
+// Carta 3 — Bar Trend KPI Sebenar (data tetap dari Excel)
+function renderTrendKpi(data){
+  killChart(cTrendKpi);
+  const KPI={
+    2024:{kebolehpasaran:96.3,bekerja:44.4,sambung:48.1,kemahiran:0.0},
+    2025:{kebolehpasaran:100.0,bekerja:28.6,sambung:64.3,kemahiran:7.1},
+  };
+  const tahunAda=[...new Set(data.map(g=>g.tahun))].sort();
+  const labels=tahunAda.length?tahunAda:[2024,2025];
+  cTrendKpi=new Chart(document.getElementById("c-trend-kpi"),{
+    type:"bar",
+    data:{
+      labels:labels.map(t=>"Kohort "+t),
+      datasets:[
+        {label:"Kebolehpasaran",data:labels.map(t=>KPI[t]?.kebolehpasaran??null),backgroundColor:"#006633",borderRadius:4},
+        {label:"Bekerja",data:labels.map(t=>KPI[t]?.bekerja??null),backgroundColor:"#003087",borderRadius:4},
+        {label:"Sambung Pengajian",data:labels.map(t=>KPI[t]?.sambung??null),backgroundColor:"#f59e0b",borderRadius:4},
+        {label:"Tingkat Kemahiran",data:labels.map(t=>KPI[t]?.kemahiran??null),backgroundColor:"#7c3aed",borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{font:{size:11}}}},
+      scales:{y:{beginAtZero:true,max:110,ticks:{callback:v=>v+"%"}}}
+    }
+  });
+}
+
+// Carta 4 — Donut Sektor
+function renderDonutSektor(data){
+  killChart(cDonutSektor);
+  const bekerja=data.filter(g=>g.status==="Bekerja");
+  const kira={};
+  bekerja.forEach(g=>{if(g.sektor!=="—")kira[g.sektor]=(kira[g.sektor]||0)+1;});
+  const labels=Object.keys(kira);
+  const vals=Object.values(kira);
+  const warna=["#003087","#006633","#c8a951","#7c3aed"];
+  cDonutSektor=new Chart(document.getElementById("c-donut-sektor"),{
+    type:"doughnut",
+    data:{labels,datasets:[{data:vals,backgroundColor:warna.slice(0,labels.length),borderWidth:2,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"right",labels:{font:{size:11}}}},cutout:"60%"
+    }
+  });
+}
+
+// Carta 5 — Top Majikan (bar mendatar)
+function renderMajikan(data){
+  killChart(cMajikan);
+  const kira={};
+  data.filter(g=>g.majikan!=="—").forEach(g=>{kira[g.majikan]=(kira[g.majikan]||0)+1;});
+  const sorted=Object.entries(kira).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  cMajikan=new Chart(document.getElementById("c-majikan"),{
+    type:"bar",
+    data:{
+      labels:sorted.map(e=>e[0].length>30?e[0].substring(0,30)+"…":e[0]),
+      datasets:[{label:"Bilangan Graduan",data:sorted.map(e=>e[1]),backgroundColor:"#003087",borderRadius:4}]
+    },
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{stepSize:1}}}
+    }
+  });
+}
+
+// =============================================================
+// PETA LEAFLET
+// =============================================================
+let peta,markerLayer;
+function initPeta(){
+  peta=L.map("map").setView([2.0,110.8],7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:18
+  }).addTo(peta);
+  markerLayer=L.layerGroup().addTo(peta);
+}
+function renderPeta(data){
+  if(!markerLayer)return;
+  markerLayer.clearLayers();
+  const grup={};
+  data.forEach(g=>{
+    const kord=KOORDINAT[g.negeri];if(!kord)return;
+    if(!grup[g.negeri])grup[g.negeri]={kord,list:[]};
+    grup[g.negeri].list.push(g);
+  });
+  Object.entries(grup).forEach(([lokasi,info])=>{
+    const kira={};
+    info.list.forEach(g=>{kira[g.status]=(kira[g.status]||0)+1;});
+    const topStatus=Object.entries(kira).sort((a,b)=>b[1]-a[1])[0][0];
+    const warna=WARNA_STATUS[topStatus]||"#64748b";
+    const icon=L.divIcon({
+      className:"",
+      html:`<div style="width:34px;height:34px;background:${warna};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${info.list.length}</div>`,
+      iconSize:[34,34],iconAnchor:[17,17]
+    });
+    const bekerja=kira["Bekerja"]||0,belajar=kira["Belajar Lanjut"]||0;
+    const kemahiran=kira["Meningkat Kemahiran"]||0,menunggu=kira["Menunggu Penempatan"]||0,tidak=kira["Tidak Bekerja"]||0;
+    L.marker([info.kord[0]+(Math.random()-.5)*.02,info.kord[1]+(Math.random()-.5)*.02],{icon})
+      .bindPopup(`<strong>${lokasi}</strong><br><small>Jumlah: <b>${info.list.length}</b><br>Bekerja: ${bekerja} | Belajar: ${belajar} | Kemahiran: ${kemahiran} | Menunggu: ${menunggu} | Tidak: ${tidak}</small>`)
+      .addTo(markerLayer);
+  });
+}
+
+// =============================================================
+// JADUAL & PAGINATION
+// =============================================================
+let jData=[],halamanSemasa=1;
+const RPH=10;
+function renderJadual(data){jData=data;halamanSemasa=1;paparHalaman();}
+function paparHalaman(){
+  const q=document.getElementById("carian").value.toLowerCase();
+  const filtered=jData.filter(g=>
+    g.nama.toLowerCase().includes(q)||g.majikan.toLowerCase().includes(q)||
+    g.negeri.toLowerCase().includes(q)||g.jawatan.toLowerCase().includes(q)
+  );
+  const total=filtered.length;
+  const totalH=Math.max(1,Math.ceil(total/RPH));
+  if(halamanSemasa>totalH)halamanSemasa=totalH;
+  const mula=(halamanSemasa-1)*RPH;
+  const akhir=Math.min(mula+RPH,total);
+  const slais=filtered.slice(mula,akhir);
+  const tbody=document.getElementById("tbody");
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px">Tiada rekod dijumpai</td></tr>`;
+  } else {
+    const badgeMap={
+      "Bekerja":"b-bekerja","Belajar Lanjut":"b-belajar",
+      "Meningkat Kemahiran":"b-kemahiran","Menunggu Penempatan":"b-menunggu","Tidak Bekerja":"b-tidak"
+    };
+    tbody.innerHTML=slais.map((g,i)=>`<tr>
+      <td>${mula+i+1}</td><td><strong>${g.nama}</strong></td>
+      <td>${g.tahun}</td><td>${g.jantina}</td>
+      <td><span class="badge ${badgeMap[g.status]||""}">${g.status}</span></td>
+      <td>${g.majikan}</td><td>${g.jawatan}</td>
+      <td>${g.gaji>0?"RM "+g.gaji.toLocaleString():"—"}</td>
+      <td>${g.negeri}</td>
+    </tr>`).join("");
+  }
+  document.getElementById("pag-info").textContent=`Memaparkan ${total?mula+1:0}–${akhir} daripada ${total} rekod`;
+  const ctrl=document.getElementById("pag-ctrl");
+  let html=`<button class="page-btn" onclick="tukarH(${halamanSemasa-1})" ${halamanSemasa===1?"disabled":""}>‹</button>`;
+  for(let p=1;p<=totalH;p++){
+    if(totalH<=7||p===1||p===totalH||Math.abs(p-halamanSemasa)<=1)
+      html+=`<button class="page-btn ${p===halamanSemasa?"active":""}" onclick="tukarH(${p})">${p}</button>`;
+    else if(Math.abs(p-halamanSemasa)===2)html+=`<span style="padding:4px;color:#94a3b8">…</span>`;
+  }
+  html+=`<button class="page-btn" onclick="tukarH(${halamanSemasa+1})" ${halamanSemasa===totalH?"disabled":""}>›</button>`;
+  ctrl.innerHTML=html;
+}
+function tukarH(p){halamanSemasa=p;paparHalaman();}
+
+// =============================================================
+// APPLY FILTER — PUSAT KAWALAN
+// =============================================================
+function applyFilter(){
+  const data=filterData();
+  document.getElementById("rekod-papar").textContent=data.length;
+  document.getElementById("rekod-jumlah").textContent=graduanData.length;
+  renderStatusTahun(data);
+  renderDonutStatus(data);
+  renderTrendKpi(data);
+  renderDonutSektor(data);
+  renderMajikan(data);
+  renderJadual(data);
+  renderPeta(data);
+}
+
+// =============================================================
+// INIT
+// =============================================================
+document.addEventListener("DOMContentLoaded",()=>{
+  // Tarikh
+  document.getElementById("tarikh-hari-ini").textContent=
+    new Date().toLocaleDateString("ms-MY",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  // Penapis
+  ["f-tahun","f-jantina","f-sektor"].forEach(id=>{
+    document.getElementById(id).addEventListener("change",applyFilter);
+  });
+  // Reset
+  document.getElementById("btn-reset").addEventListener("click",()=>{
+    ["f-tahun","f-jantina","f-sektor"].forEach(id=>{document.getElementById(id).value="Semua";});
+    applyFilter();
+  });
+  // Carian jadual
+  document.getElementById("carian").addEventListener("input",paparHalaman);
+  // Peta
+  initPeta();
+  // Render pertama
+  applyFilter();
+});
+</script>
+</body>
+</html>
